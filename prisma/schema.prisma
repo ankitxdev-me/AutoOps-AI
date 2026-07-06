@@ -14,20 +14,21 @@ model SchemaVerification {
 }
 
 model Tenant {
-  id             String           @id @default(uuid())
+  id             String            @id @default(uuid())
   name           String
-  slug           String           @unique
+  slug           String            @unique
   industry       String
   country        String
-  status         String           @default("onboarding_pending")
-  plan           String           @default("free")
-  onboardingStep String           @default("1")
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  status         String            @default("onboarding_pending")
+  plan           String            @default("free")
+  onboardingStep String            @default("1")
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
   deletedAt      DateTime?
 
   employees      Employee[]
   profile        BusinessProfile?
+  settings       BusinessSettings?
 }
 
 model User {
@@ -86,4 +87,21 @@ model BusinessProfile {
   updatedAt           DateTime @updatedAt
 
   tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model BusinessSettings {
+  id             String   @id @default(uuid())
+  tenantId       String   @unique
+  timezone       String   @default("UTC")
+  currency       String   @default("USD")
+  language       String   @default("en")
+  dateFormat     String   @default("YYYY-MM-DD")
+  timeFormat     String   @default("24h")
+  businessHours  Json     @default("{}")
+  weekStartsOn   Int      @default(1)
+  defaultCountry String   @default("US")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 }

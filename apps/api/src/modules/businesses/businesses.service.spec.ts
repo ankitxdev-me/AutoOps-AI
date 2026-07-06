@@ -16,6 +16,10 @@ describe('BusinessesService', () => {
   const mockFindUniqueBusinessProfile = jest.fn();
   const mockUpdateBusinessProfile = jest.fn();
 
+  const mockCreateBusinessSettings = jest.fn();
+  const mockFindUniqueBusinessSettings = jest.fn();
+  const mockUpdateBusinessSettings = jest.fn();
+
   const mockPrisma = {
     user: {
       findUnique: mockFindUniqueUser,
@@ -32,6 +36,11 @@ describe('BusinessesService', () => {
       create: mockCreateBusinessProfile,
       findUnique: mockFindUniqueBusinessProfile,
       update: mockUpdateBusinessProfile,
+    },
+    businessSettings: {
+      create: mockCreateBusinessSettings,
+      findUnique: mockFindUniqueBusinessSettings,
+      update: mockUpdateBusinessSettings,
     },
     $transaction: jest
       .fn()
@@ -100,7 +109,7 @@ describe('BusinessesService', () => {
       ).rejects.toThrow(ConflictException);
     });
 
-    it('should create business, profile, and owner employee in transaction', async () => {
+    it('should create business, profile, settings, and owner employee in transaction', async () => {
       mockFindUniqueUser.mockResolvedValueOnce({ id: 'usr_123' });
       mockFindFirstEmployee.mockResolvedValueOnce(null);
       mockFindUniqueTenant.mockResolvedValueOnce(null);
@@ -122,6 +131,7 @@ describe('BusinessesService', () => {
       mockCreateTenant.mockResolvedValueOnce(mockTenant);
       mockCreateEmployee.mockResolvedValueOnce(mockEmployee);
       mockCreateBusinessProfile.mockResolvedValueOnce({ id: 'profile_123' });
+      mockCreateBusinessSettings.mockResolvedValueOnce({ id: 'settings_123' });
 
       const result = await service.createBusiness('clerk_123', {
         name: 'Zenith Properties',
@@ -139,6 +149,12 @@ describe('BusinessesService', () => {
           displayName: 'Zenith Properties',
           industry: 'real_estate',
           country: 'IN',
+        },
+      });
+      expect(mockCreateBusinessSettings).toHaveBeenCalledWith({
+        data: {
+          tenantId: 'tenant_123',
+          defaultCountry: 'IN',
         },
       });
     });
@@ -190,6 +206,55 @@ describe('BusinessesService', () => {
         legalBusinessName: 'New Name',
       });
       expect(result).toEqual(updatedProfile);
+    });
+  });
+
+  describe('getSettings', () => {
+    it('should throw BadRequestException if settings do not exist', async () => {
+      mockFindUniqueBusinessSettings.mockResolvedValueOnce(null);
+
+      await expect(service.getSettings('tenant_not_exist')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should return business settings if found', async () => {
+      const mockSettings = {
+        id: 'settings_123',
+        tenantId: 'tenant_123',
+        timezone: 'UTC',
+      };
+      mockFindUniqueBusinessSettings.mockResolvedValueOnce(mockSettings);
+
+      const result = await service.getSettings('tenant_123');
+      expect(result).toEqual(mockSettings);
+    });
+  });
+
+  describe('updateSettings', () => {
+    it('should throw BadRequestException if settings do not exist for update', async () => {
+      mockFindUniqueBusinessSettings.mockResolvedValueOnce(null);
+
+      await expect(
+        service.updateSettings('tenant_not_exist', {}),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should update settings and return the updated values', async () => {
+      const mockSettings = {
+        id: 'settings_123',
+        tenantId: 'tenant_123',
+        timezone: 'UTC',
+      };
+      mockFindUniqueBusinessSettings.mockResolvedValueOnce(mockSettings);
+
+      const updatedSettings = { ...mockSettings, timezone: 'Asia/Kolkata' };
+      mockUpdateBusinessSettings.mockResolvedValueOnce(updatedSettings);
+
+      const result = await service.updateSettings('tenant_123', {
+        timezone: 'Asia/Kolkata',
+      });
+      expect(result).toEqual(updatedSettings);
     });
   });
 });

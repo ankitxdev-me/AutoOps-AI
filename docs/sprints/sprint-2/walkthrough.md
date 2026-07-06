@@ -1,6 +1,6 @@
-# Sprint 2 Walkthrough — Tasks 2.1, 2.2 & 2.3 Complete
+# Sprint 2 Walkthrough — Tasks 2.1, 2.2, 2.3 & 2.4 Complete
 
-We have successfully implemented and verified **Task 2.1 — Clerk Authentication**, **Task 2.2 — Business (Tenant) Foundation**, and **Task 2.3 — Business Profile** for both the NestJS API and the Next.js Web app.
+We have successfully implemented and verified **Task 2.1 — Clerk Authentication**, **Task 2.2 — Business (Tenant) Foundation**, **Task 2.3 — Business Profile**, and **Task 2.4 — Business Settings** for both the NestJS API and the Next.js Web app.
 
 ## Changes Made
 
@@ -11,7 +11,9 @@ We have successfully implemented and verified **Task 2.1 — Clerk Authenticatio
 - Scaffolded sign-in and sign-up page paths dynamically integrating Clerk forms ([sign-in/page.tsx](<file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/(auth)/sign-in/%5B%5B...sign-in%5D%5D/page.tsx>), [sign-up/page.tsx](<file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/(auth)/sign-up/%5B%5B...sign-up%5D%5D/page.tsx>)).
 - Implemented client API utility wrapper supporting JWT fetching dynamically ([api.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/lib/api.ts)).
 - Created dashboard layout layout.tsx under app/(dashboard) to serve as a premium navigation sidebar and header container ([layout.tsx](<file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/(dashboard)/layout.tsx>)).
-- Created Business Profile Form at `/settings` supporting loading states, save triggers, success/error feedback notifications, responsive layout, and robust client validation ([page.tsx](<file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/(dashboard)/settings/page.tsx>)).
+- Created Tabbed settings view at `/settings` with:
+  - **Business Profile tab**: Supporting profile updating, responsive grid forms, and client validation ([page.tsx](<file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/(dashboard)/settings/page.tsx>)).
+  - **Operational Settings tab**: Supporting timezone selector, default currency updates, week start day mapping, and Weekly Business Hours form arrays ([page.tsx](<file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/(dashboard)/settings/page.tsx>)).
 
 ### Backend (`apps/api`)
 
@@ -39,6 +41,14 @@ We have successfully implemented and verified **Task 2.1 — Clerk Authenticatio
 - Implemented `GET /api/v1/businesses/active/profile` to resolve the logged-in tenant's active profile ([businesses.controller.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/businesses/businesses.controller.ts)).
 - Implemented `PATCH /api/v1/businesses/active/profile` supporting validated partial updates of profile details ([businesses.controller.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/businesses/businesses.controller.ts)).
 - Added comprehensive backend validation checks targeting name constraints, emails, websites, phone numbers, and postal codes.
+
+#### Task 2.4 — Business Settings
+
+- Updated database schema to implement the `BusinessSettings` model linked to `Tenant` ([schema.prisma](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/prisma/schema.prisma)).
+- Generated and successfully executed migration `business-settings` against the PostgreSQL database container.
+- Updated `BusinessesService` transaction logic to automatically provision a default `BusinessSettings` record alongside the Tenant and Profile ([businesses.service.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/businesses/businesses.service.ts)).
+- Implemented `GET /api/v1/businesses/active/settings` to fetch active tenant operational preferences ([businesses.controller.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/businesses/businesses.controller.ts)).
+- Implemented `PATCH /api/v1/businesses/active/settings` validating timezone, currency code, languages, date formats, time format constraints, week start dates, and business hours schemas ([businesses.controller.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/businesses/businesses.controller.ts)).
 
 ---
 
@@ -80,10 +90,10 @@ pnpm --filter api run test
 - `PASS src/app.controller.spec.ts`
 - `PASS src/common/guards/clerk-auth.guard.spec.ts` (asserts valid tokens unlock, invalid and missing credentials fail, production rejects mock tokens, development accepts mock tokens only when ENABLE_MOCK_AUTH=true)
 - `PASS src/modules/auth/auth.controller.spec.ts` (asserts `/auth/me` resolves valid JWT payloads)
-- `PASS src/modules/businesses/businesses.service.spec.ts` (asserts businesses create cleanly, unique slugs resolve, single-business restrictions enforce, and profile CRUD operations map correctly)
-- `PASS src/modules/businesses/businesses.controller.spec.ts` (asserts payload validations and bad requests reject appropriately on both POST and PATCH profiles)
+- `PASS src/modules/businesses/businesses.service.spec.ts` (asserts businesses create cleanly, unique slugs resolve, single-business restrictions enforce, profile and settings CRUD operations map correctly)
+- `PASS src/modules/businesses/businesses.controller.spec.ts` (asserts payload validations and bad requests reject appropriately on both POST and PATCH profiles/settings)
 
-- **Result**: 5 passed, 5 total; 33 passed, 33 total.
+- **Result**: 5 passed, 5 total; **All 46 unit tests pass successfully**.
 
 ### 2. Workspace Monorepo Build checks
 

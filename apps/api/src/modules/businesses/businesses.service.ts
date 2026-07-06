@@ -72,6 +72,14 @@ export class BusinessesService {
         },
       });
 
+      // Automatically create a default BusinessSettings together with the Tenant
+      await tx.businessSettings.create({
+        data: {
+          tenantId: tenant.id,
+          defaultCountry: data.country,
+        },
+      });
+
       const employee = await tx.employee.create({
         data: {
           tenantId: tenant.id,
@@ -130,6 +138,45 @@ export class BusinessesService {
         addressLine2: data.addressLine2,
         postalCode: data.postalCode,
         logoUrl: data.logoUrl,
+      },
+    });
+  }
+
+  async getSettings(tenantId: string) {
+    const settings = await this.prisma.businessSettings.findUnique({
+      where: { tenantId },
+    });
+    if (!settings) {
+      throw new BadRequestException('Business settings not found');
+    }
+    return settings;
+  }
+
+  async updateSettings(
+    tenantId: string,
+    data: Partial<
+      Omit<import('@prisma/client').BusinessSettings, 'businessHours'>
+    > & { businessHours?: any },
+  ) {
+    const settings = await this.prisma.businessSettings.findUnique({
+      where: { tenantId },
+    });
+    if (!settings) {
+      throw new BadRequestException('Business settings not found');
+    }
+
+    return this.prisma.businessSettings.update({
+      where: { tenantId },
+      data: {
+        timezone: data.timezone,
+        currency: data.currency,
+        language: data.language,
+        dateFormat: data.dateFormat,
+        timeFormat: data.timeFormat,
+        businessHours: (data.businessHours ??
+          undefined) as import('@prisma/client').Prisma.InputJsonValue,
+        weekStartsOn: data.weekStartsOn,
+        defaultCountry: data.defaultCountry,
       },
     });
   }

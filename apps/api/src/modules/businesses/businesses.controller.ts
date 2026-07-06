@@ -139,6 +139,144 @@ export class UpdateBusinessProfileDto {
   }
 }
 
+export class UpdateBusinessSettingsDto {
+  timezone?: string;
+  currency?: string;
+  language?: string;
+  dateFormat?: string;
+  timeFormat?: string;
+  businessHours?: Record<string, unknown> | null;
+  weekStartsOn?: number;
+  defaultCountry?: string;
+
+  static validate(dto: UpdateBusinessSettingsDto) {
+    if (dto.timezone !== undefined) {
+      if (
+        typeof dto.timezone !== 'string' ||
+        dto.timezone.trim().length === 0
+      ) {
+        throw new BadRequestException('Timezone must be a non-empty string');
+      }
+    }
+
+    if (dto.currency !== undefined) {
+      if (
+        typeof dto.currency !== 'string' ||
+        dto.currency.trim().length !== 3
+      ) {
+        throw new BadRequestException(
+          'Currency must be a 3-character ISO code',
+        );
+      }
+    }
+
+    if (dto.language !== undefined) {
+      if (
+        typeof dto.language !== 'string' ||
+        dto.language.trim().length < 2 ||
+        dto.language.trim().length > 5
+      ) {
+        throw new BadRequestException(
+          'Language must be a 2 to 5 character code',
+        );
+      }
+    }
+
+    if (dto.dateFormat !== undefined) {
+      const allowedFormats = [
+        'YYYY-MM-DD',
+        'DD/MM/YYYY',
+        'MM/DD/YYYY',
+        'DD-MM-YYYY',
+        'YYYY/MM/DD',
+      ];
+      if (
+        typeof dto.dateFormat !== 'string' ||
+        !allowedFormats.includes(dto.dateFormat)
+      ) {
+        throw new BadRequestException(
+          'Date format must be one of: ' + allowedFormats.join(', '),
+        );
+      }
+    }
+
+    if (dto.timeFormat !== undefined) {
+      if (dto.timeFormat !== '12h' && dto.timeFormat !== '24h') {
+        throw new BadRequestException('Time format must be "12h" or "24h"');
+      }
+    }
+
+    if (dto.weekStartsOn !== undefined) {
+      if (
+        typeof dto.weekStartsOn !== 'number' ||
+        dto.weekStartsOn < 0 ||
+        dto.weekStartsOn > 6
+      ) {
+        throw new BadRequestException(
+          'Week starts on must be an integer between 0 (Sunday) and 6 (Saturday)',
+        );
+      }
+    }
+
+    if (dto.defaultCountry !== undefined) {
+      if (
+        typeof dto.defaultCountry !== 'string' ||
+        dto.defaultCountry.trim().length !== 2
+      ) {
+        throw new BadRequestException(
+          'Default country must be a 2-character country code',
+        );
+      }
+    }
+
+    if (dto.businessHours !== undefined && dto.businessHours !== null) {
+      if (typeof dto.businessHours !== 'object') {
+        throw new BadRequestException(
+          'Business hours must be a valid JSON object',
+        );
+      }
+      const days = [
+        'monday',
+        'tuesday',
+        'wednesday',
+        'thursday',
+        'friday',
+        'saturday',
+        'sunday',
+      ];
+      for (const key of Object.keys(dto.businessHours)) {
+        if (!days.includes(key.toLowerCase())) {
+          throw new BadRequestException(
+            `Invalid day name in business hours: ${key}`,
+          );
+        }
+        const val = dto.businessHours[key];
+        if (typeof val !== 'object' || val === null) {
+          throw new BadRequestException(
+            `Business hours for day "${key}" must be an object`,
+          );
+        }
+        const valObj = val as Record<string, unknown>;
+        if ('closed' in valObj && typeof valObj.closed !== 'boolean') {
+          throw new BadRequestException(
+            `"closed" property for day "${key}" must be a boolean`,
+          );
+        }
+        if ('open' in valObj && typeof valObj.open !== 'string') {
+          throw new BadRequestException(
+            `"open" property for day "${key}" must be a string`,
+          );
+        }
+        if ('close' in valObj && typeof valObj.close !== 'string') {
+          throw new BadRequestException(
+            `"close" property for day "${key}" must be a string`,
+          );
+        }
+      }
+    }
+  }
+}
+
 @Controller('businesses')
 @UseGuards(ClerkAuthGuard, TenantContextGuard)
 export class BusinessesController {
@@ -194,6 +332,35 @@ export class BusinessesController {
     return {
       success: true,
       data: updatedProfile,
+    };
+  }
+
+  @Get('active/settings')
+  @UseGuards(TenantRequiredGuard)
+  async getSettings(@TenantContext() tenantContext: TenantContextPayload) {
+    const settings = await this.businessesService.getSettings(
+      tenantContext.tenantId,
+    );
+    return {
+      success: true,
+      data: settings,
+    };
+  }
+
+  @Patch('active/settings')
+  @UseGuards(TenantRequiredGuard)
+  async updateSettings(
+    @TenantContext() tenantContext: TenantContextPayload,
+    @Body() body: UpdateBusinessSettingsDto,
+  ) {
+    UpdateBusinessSettingsDto.validate(body);
+    const updatedSettings = await this.businessesService.updateSettings(
+      tenantContext.tenantId,
+      body,
+    );
+    return {
+      success: true,
+      data: updatedSettings,
     };
   }
 }
