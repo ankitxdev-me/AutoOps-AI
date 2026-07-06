@@ -29,6 +29,7 @@ model Tenant {
   employees      Employee[]
   profile        BusinessProfile?
   settings       BusinessSettings?
+  invitations    Invitation[]
 }
 
 model User {
@@ -105,3 +106,26 @@ model BusinessSettings {
 
   tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 }
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  CANCELLED
+}
+
+model Invitation {
+  id         String           @id @default(uuid())
+  tenantId   String
+  email      String
+  firstName  String
+  lastName   String
+  role       EmployeeRole     @default(MEMBER)
+  status     InvitationStatus @default(PENDING)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  tenant     Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, email])
+}
+

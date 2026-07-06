@@ -1,6 +1,6 @@
-# Sprint 2 Walkthrough — Tasks 2.1, 2.2, 2.3 & 2.4 Complete
+# Sprint 2 Walkthrough — Tasks 2.1, 2.2, 2.3, 2.4 & 2.5 Complete
 
-We have successfully implemented and verified **Task 2.1 — Clerk Authentication**, **Task 2.2 — Business (Tenant) Foundation**, **Task 2.3 — Business Profile**, and **Task 2.4 — Business Settings** for both the NestJS API and the Next.js Web app.
+We have successfully implemented and verified **Task 2.1 — Clerk Authentication**, **Task 2.2 — Business (Tenant) Foundation**, **Task 2.3 — Business Profile**, **Task 2.4 — Business Settings**, and **Task 2.5 — Employee & Roles Foundation** for both the NestJS API and the Next.js Web app.
 
 ## Changes Made
 
@@ -8,99 +8,122 @@ We have successfully implemented and verified **Task 2.1 — Clerk Authenticatio
 
 - Wrapped Next.js application root in `ClerkProvider` ([layout.tsx](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/layout.tsx)).
 - Added protected route middleware checking for public paths ([middleware.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/middleware.ts)).
-- Scaffolded sign-in and sign-up page paths dynamically integrating Clerk forms ([sign-in/page.tsx](<file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/(auth)/sign-in/%5B%5B...sign-in%5D%5D/page.tsx>), [sign-up/page.tsx](<file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/(auth)/sign-up/%5B%5B...sign-up%5D%5D/page.tsx>)).
+- Scaffolded sign-in and sign-up page paths dynamically integrating Clerk forms.
 - Implemented client API utility wrapper supporting JWT fetching dynamically ([api.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/lib/api.ts)).
-- Created dashboard layout layout.tsx under app/(dashboard) to serve as a premium navigation sidebar and header container ([layout.tsx](<file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/(dashboard)/layout.tsx>)).
-- Created Tabbed settings view at `/settings` with:
-  - **Business Profile tab**: Supporting profile updating, responsive grid forms, and client validation ([page.tsx](<file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/(dashboard)/settings/page.tsx>)).
-  - **Operational Settings tab**: Supporting timezone selector, default currency updates, week start day mapping, and Weekly Business Hours form arrays ([page.tsx](<file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/(dashboard)/settings/page.tsx>)).
+- Created dashboard layout under `app/(dashboard)` serving as a premium navigation sidebar container ([layout.tsx](<file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/(dashboard)/layout.tsx>)).
+- Created tabbed settings view at `/settings` with:
+  - **Business Profile tab**: Profile updating, responsive grid forms, and client-side validation.
+  - **Operational Settings tab**: Timezone selector, currency, week start, and weekly business hours form.
+- Created `/members` page with full team management UI ([page.tsx](<file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/(dashboard)/members/page.tsx>)):
+  - Active member list with role badges (OWNER / ADMIN / MEMBER), avatar initials, and title display.
+  - Cursor-based "Load More" pagination.
+  - Name/email search form.
+  - Invite Member form with per-field client-side validation and constrained role selector (ADMIN / MEMBER only).
+  - Pending Invitations panel listing all PENDING invitation records.
+  - Loading, empty, error, and success notification states.
 
 ### Backend (`apps/api`)
 
 #### Task 2.1 — Authentication
 
-- Created JWT verification guard (`ClerkAuthGuard`) integrating Clerk's verification client with support for mock signatures under test environments ([clerk-auth.guard.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/common/guards/clerk-auth.guard.ts)).
-- Created request param decorator to extract the parsed Clerk identity ([user.decorator.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/common/decorators/user.decorator.ts)).
-- Implemented protected `GET /api/v1/auth/me` endpoint in backend returning authenticated identity attributes ([auth.controller.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/auth/auth.controller.ts)).
+- Created `ClerkAuthGuard` JWT verification guard integrating Clerk's JWKS verification ([clerk-auth.guard.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/common/guards/clerk-auth.guard.ts)).
+- Created `@User()` param decorator to extract parsed Clerk identity ([user.decorator.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/common/decorators/user.decorator.ts)).
+- Implemented protected `GET /api/v1/auth/me` returning authenticated identity attributes.
 
 #### Task 2.2 — Business Foundation
 
-- Updated database schema to define the core relational structure for `Tenant`, `User`, and `Employee` tables ([schema.prisma](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/prisma/schema.prisma)).
-- Generated and successfully executed migration `business-foundation` against the PostgreSQL container.
-- Wired global `PrismaService` and `PrismaModule` to manage PostgreSQL connection lifecycles within NestJS dependency containers ([prisma.service.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/prisma/prisma.service.ts), [prisma.module.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/prisma/prisma.module.ts)).
-- Created `TenantContextGuard` to resolve/lazy-sync the Clerk user metadata to the local PostgreSQL database, query the user's active `Employee` context, and inject the mapped tenant information to the request payload ([tenant-context.guard.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/common/guards/tenant-context.guard.ts)).
-- Created parameter decorator `TenantContext` to fetch active tenant configurations in module controller endpoints ([tenant-context.decorator.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/common/decorators/tenant-context.decorator.ts)).
-- Implemented businesses domain controller and service supporting `POST /api/v1/businesses` to instantiate new tenants, associate the creating user as `OWNER` of the tenant, validate unique slugs, and enforce the single-business registration limit for Sprint 2 ([businesses.controller.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/businesses/businesses.controller.ts), [businesses.service.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/businesses/businesses.service.ts)).
-- Refactored `GET /api/v1/auth/me` to query database-backed context values resolved via the tenant guards ([auth.controller.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/auth/auth.controller.ts)).
+- Updated schema: `Tenant`, `User`, `Employee` tables ([schema.prisma](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/prisma/schema.prisma)).
+- Migration `business-foundation` applied successfully.
+- Created `TenantContextGuard` — resolves/lazy-syncs Clerk user to PostgreSQL DB user, resolves active `Employee` context, injects `tenantContext` to request.
+- Created `@TenantContext()` param decorator.
+- Implemented `POST /api/v1/businesses` — creates Tenant + Employee(OWNER) in a single transaction.
 
 #### Task 2.3 — Business Profile
 
-- Updated database schema to implement the `BusinessProfile` model linked to `Tenant` ([schema.prisma](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/prisma/schema.prisma)).
-- Generated and successfully executed migration `business-profile` against the PostgreSQL database container.
-- Updated `BusinessesService` transaction logic to automatically provision a default shell `BusinessProfile` upon `Tenant` instantiation ([businesses.service.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/businesses/businesses.service.ts)).
-- Implemented `GET /api/v1/businesses/active/profile` to resolve the logged-in tenant's active profile ([businesses.controller.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/businesses/businesses.controller.ts)).
-- Implemented `PATCH /api/v1/businesses/active/profile` supporting validated partial updates of profile details ([businesses.controller.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/businesses/businesses.controller.ts)).
-- Added comprehensive backend validation checks targeting name constraints, emails, websites, phone numbers, and postal codes.
+- Updated schema: `BusinessProfile` model ([schema.prisma](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/prisma/schema.prisma)).
+- Migration `business-profile` applied successfully.
+- Default `BusinessProfile` auto-created in the same transaction as `Tenant`.
+- Implemented `GET /api/v1/businesses/active/profile` and `PATCH /api/v1/businesses/active/profile`.
 
 #### Task 2.4 — Business Settings
 
-- Updated database schema to implement the `BusinessSettings` model linked to `Tenant` ([schema.prisma](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/prisma/schema.prisma)).
-- Generated and successfully executed migration `business-settings` against the PostgreSQL database container.
-- Updated `BusinessesService` transaction logic to automatically provision a default `BusinessSettings` record alongside the Tenant and Profile ([businesses.service.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/businesses/businesses.service.ts)).
-- Implemented `GET /api/v1/businesses/active/settings` to fetch active tenant operational preferences ([businesses.controller.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/businesses/businesses.controller.ts)).
-- Implemented `PATCH /api/v1/businesses/active/settings` validating timezone, currency code, languages, date formats, time format constraints, week start dates, and business hours schemas ([businesses.controller.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/businesses/businesses.controller.ts)).
+- Updated schema: `BusinessSettings` model ([schema.prisma](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/prisma/schema.prisma)).
+- Migration `business-settings` applied successfully.
+- Default `BusinessSettings` auto-created in the same transaction as `Tenant`.
+- Implemented `GET /api/v1/businesses/active/settings` and `PATCH /api/v1/businesses/active/settings`.
+- Full validation: timezone, currency (ISO 4217), language, date format (allowlist), time format, week start (0–6), country (ISO 3166), business hours JSON schema.
+
+#### Task 2.5 — Employee & Roles Foundation
+
+- Added `InvitationStatus` enum (`PENDING`, `ACCEPTED`, `CANCELLED`) and `Invitation` model to Prisma schema ([schema.prisma](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/prisma/schema.prisma)).
+  - `Invitation` stores: `tenantId`, `email`, `firstName`, `lastName`, `role` (existing `EmployeeRole` enum), `status`.
+  - `@@unique([tenantId, email])` prevents duplicate invitation records per tenant.
+  - Cascade deletion from `Tenant` ensures orphaned invitations are automatically removed.
+- Migration `employee-foundation` (`20260706123759_employee_foundation`) applied successfully.
+- Created dedicated `MembersModule` ([members.module.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/members/members.module.ts)), `MembersController` ([members.controller.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/members/members.controller.ts)), `MembersService` ([members.service.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/members/members.service.ts)).
+- Registered `MembersModule` in `AppModule` ([app.module.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/app.module.ts)).
+- `GET /api/v1/businesses/active/members`:
+  - Returns all `active` employees for the authenticated tenant with joined `user` identity fields.
+  - Cursor-based pagination (`cursor`, `limit` query params; max 100 per page).
+  - Optional name/email search (`search` query param — case-insensitive Prisma `contains`).
+  - Sorted by `createdAt` ascending.
+- `POST /api/v1/businesses/active/members/invite`:
+  - Accepts `email`, `firstName`, `lastName`, `role` (ADMIN or MEMBER only — OWNER is rejected).
+  - Full field validation with descriptive `400 Bad Request` messages.
+  - `403 Forbidden` when caller's role is `MEMBER`.
+  - `409 Conflict` on duplicate active member or duplicate pending invitation.
+  - Upserts (re-activates) previously `CANCELLED` or `ACCEPTED` invitation records.
+  - Email normalized to lowercase before persistence.
+  - Returns `{ success: true, data: invitation }` envelope.
 
 ---
 
-## Security Refinements (Task 2.1 Patch)
+## Security Refinements
 
-Following a production security audit, the mock authentication flow was hardened with the following strict environment rules:
+### Task 2.1 — Auth Guard Hardening
 
-### 1. Production Authentication Flow
+- `NODE_ENV=production`: Clerk JWT strictly required — no mock bypass, no fallback secrets.
+- Development mock auth only enabled when `NODE_ENV !== production` **and** `ENABLE_MOCK_AUTH=true`.
+- All inline test secrets removed; configuration is exclusively environment-driven.
 
-- When `NODE_ENV=production`, Clerk JWT validation is **strictly mandatory**.
-- No mock credentials bypass or fallback is allowed under any circumstance.
-- The guard demands an explicit `CLERK_SECRET_KEY` in environment variables. If absent, the guard fails with a `401 Unauthorized` exception to protect downstream systems.
+### Task 2.5 — Members Security Model
 
-### 2. Development Mock Authentication
-
-- Mock authentication bypass is only enabled if:
-  1. The environment is **not** production (`NODE_ENV !== 'production'`).
-  2. The explicit environment flag `ENABLE_MOCK_AUTH=true` is set.
-  3. The bearer token starts with `"mock-"`.
-- If `ENABLE_MOCK_AUTH` is missing or set to `false`, the backend fails back to real Clerk JWKS validation.
-
-### 3. Test Authentication
-
-- Unit tests explicitly verify the separation of mock and production states.
-- Removed all inline fallback secrets (such as `"sk_test_mock_secret"`) to force secure configuration from environment variables.
+- All member endpoints require `ClerkAuthGuard` + `TenantContextGuard` + `TenantRequiredGuard`.
+- `tenantId` is resolved exclusively from authenticated session context — never from request body or query params.
+- `POST /invite` enforces role check: `MEMBER` receives `403 Forbidden`; only `OWNER` and `ADMIN` may invite.
+- `OWNER` role cannot be assigned via invitation — prevents privilege escalation.
+- Duplicate active member and duplicate pending invitation both rejected with `409 Conflict`.
+- All data scoped to caller's `tenantId` — zero cross-tenant access.
 
 ---
 
 ## Verification Results
 
-### 1. Automated Unit/Integration Tests
-
-Ran NestJS test pipeline successfully:
+### Unit Tests
 
 ```bash
 pnpm --filter api run test
 ```
 
-- `PASS src/app.controller.spec.ts`
-- `PASS src/common/guards/clerk-auth.guard.spec.ts` (asserts valid tokens unlock, invalid and missing credentials fail, production rejects mock tokens, development accepts mock tokens only when ENABLE_MOCK_AUTH=true)
-- `PASS src/modules/auth/auth.controller.spec.ts` (asserts `/auth/me` resolves valid JWT payloads)
-- `PASS src/modules/businesses/businesses.service.spec.ts` (asserts businesses create cleanly, unique slugs resolve, single-business restrictions enforce, profile and settings CRUD operations map correctly)
-- `PASS src/modules/businesses/businesses.controller.spec.ts` (asserts payload validations and bad requests reject appropriately on both POST and PATCH profiles/settings)
+| Suite                           | Result  |
+| ------------------------------- | ------- |
+| `app.controller.spec.ts`        | ✅ PASS |
+| `clerk-auth.guard.spec.ts`      | ✅ PASS |
+| `auth.controller.spec.ts`       | ✅ PASS |
+| `businesses.service.spec.ts`    | ✅ PASS |
+| `businesses.controller.spec.ts` | ✅ PASS |
+| `members.service.spec.ts`       | ✅ PASS |
+| `members.controller.spec.ts`    | ✅ PASS |
 
-- **Result**: 5 passed, 5 total; **All 46 unit tests pass successfully**.
+**7 suites · 68 tests · 0 failures**
 
-### 2. Workspace Monorepo Build checks
-
-Ran complete Turborepo static validation successfully:
+### Monorepo Build
 
 ```bash
 pnpm exec turbo run build lint typecheck
 ```
 
-- **Result**: All 16 build/lint/typecheck steps across 8 packages compiled and validated with zero errors.
+**16/16 tasks successful** across 8 packages — zero errors.
+
+- `/members` route: 8.44 kB (184 kB First Load JS)
+- `/settings` route: 4.03 kB (179 kB First Load JS)
