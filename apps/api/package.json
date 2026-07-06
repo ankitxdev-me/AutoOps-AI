@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "postinstall": "prisma generate --schema=../../prisma/schema.prisma",
+    "postinstall": "node -e \"const fs = require('fs'); const { execSync } = require('child_process'); const paths = ['../../prisma/schema.prisma', 'prisma/schema.prisma']; const path = paths.find(p => fs.existsSync(p)); if (path) { console.log('Using schema:', path); execSync('npx prisma generate --schema=' + path, { stdio: 'inherit' }); } else { throw new Error('Could not find schema.prisma'); }\"",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
