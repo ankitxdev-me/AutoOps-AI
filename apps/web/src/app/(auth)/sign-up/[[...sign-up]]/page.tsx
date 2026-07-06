@@ -2,11 +2,11 @@ import { SignUp } from '@clerk/nextjs';
 
 export default function SignUpPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-950 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-[#0B1220] p-4">
       <SignUp
         appearance={{
           variables: {
-            colorPrimary: '#0ea5e9',
+            colorPrimary: '#3B82F6',
           },
         }}
       />

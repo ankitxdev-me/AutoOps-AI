@@ -12,8 +12,16 @@ interface OnboardingStatus {
   isCompleted: boolean;
 }
 
-interface TenantProfile {
-  legalBusinessName: string;
+interface AuthMePayload {
+  user: {
+    id: string;
+    clerkId: string;
+  };
+  activeEmployee: {
+    id: string;
+    tenantId: string;
+    tenantName: string;
+  } | null;
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -30,29 +38,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       if (!isLoaded) return;
       try {
         const token = await getToken();
+        // 1. Fetch user workspace profile details
+        const meRes = await fetchWithAuth<AuthMePayload>('/auth/me', token);
+        if (!meRes.success || !meRes.data.activeEmployee) {
+          router.replace('/business/create');
+          return;
+        }
+
+        setTenantName(meRes.data.activeEmployee.tenantName);
+
+        // 2. Verify operational onboarding completions
         const res = await fetchWithAuth<OnboardingStatus>('/onboarding/status', token);
         if (res.success && res.data.onboardingStep !== 'completed') {
           router.replace('/onboarding');
         } else {
           setCheckingOnboarding(false);
-          // Also fetch tenant name for layout context
-          const profileRes = await fetchWithAuth<TenantProfile>(
-            '/businesses/active/profile',
-            token,
-          );
-          if (profileRes.success && profileRes.data.legalBusinessName) {
-            setTenantName(profileRes.data.legalBusinessName);
-          }
         }
       } catch {
-        setCheckingOnboarding(false);
+        router.replace('/business/create');
       }
     }
     void checkOnboardingStatus();
   }, [isLoaded, getToken, router]);
 
   const activePages = [
-    { name: 'Dashboard', href: '/', icon: '📊' },
+    { name: 'Dashboard', href: '/dashboard', icon: '📊' },
     { name: 'Business Profile', href: '/business/profile', icon: '🏢' },
     { name: 'Business Settings', href: '/business/settings', icon: '⚙️' },
     { name: 'Team Members', href: '/business/members', icon: '👥' },
@@ -81,9 +91,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (checkingOnboarding) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center space-y-4">
-        <div className="w-12 h-12 rounded-full border-4 border-slate-800 border-t-violet-500 animate-spin" />
-        <p className="text-slate-400 text-sm">Verifying onboarding status...</p>
+      <div className="min-h-screen bg-[#0B1220] flex flex-col items-center justify-center space-y-4">
+        <div className="w-12 h-12 rounded-full border-4 border-slate-800 border-t-blue-500 animate-spin" />
+        <p className="text-[#94A3B8] text-sm">Verifying onboarding status...</p>
       </div>
     );
   }
@@ -98,10 +108,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           onClick={() => setMobileMenuOpen(false)}
           className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group ${
             isActive
-              ? 'bg-gradient-to-r from-violet-600/20 to-indigo-600/10 border-l-2 border-violet-500 text-violet-400 font-semibold'
+              ? 'bg-gradient-to-r from-blue-600/20 to-indigo-650/10 border-l-2 border-blue-500 text-blue-400 font-semibold'
               : isDisabled
                 ? 'text-slate-600 cursor-not-allowed'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-850'
+                : 'text-[#94A3B8] hover:text-slate-200 hover:bg-slate-850'
           }`}
         >
           <div className="flex items-center space-x-3">
@@ -119,18 +129,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-[#0B1220] text-slate-100 flex flex-col md:flex-row font-sans selection:bg-blue-600/30">
       {/* Mobile Top Header */}
-      <div className="md:hidden flex items-center justify-between px-6 py-4 bg-slate-900/60 border-b border-slate-800 sticky top-0 z-20 backdrop-blur-md">
+      <div className="md:hidden flex items-center justify-between px-6 py-4 bg-[#111827]/80 border-b border-slate-800/60 sticky top-0 z-20 backdrop-blur-lg">
         <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-violet-500 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20">
             A
           </div>
           <span className="font-bold text-base text-slate-100">{tenantName}</span>
         </div>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="text-slate-400 hover:text-white focus:outline-none"
+          className="text-slate-400 hover:text-white focus:outline-none p-1.5 rounded-lg bg-slate-900/50 border border-slate-850"
         >
           {mobileMenuOpen ? '✕' : '☰'}
         </button>
@@ -139,13 +149,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Sidebar - Desktop & Mobile Drawers */}
       <aside
         className={`${
-          mobileMenuOpen ? 'flex' : 'hidden md:flex'
-        } fixed inset-0 md:relative md:inset-auto z-30 md:z-10 w-full md:w-64 border-r border-slate-800 bg-slate-900/90 md:bg-slate-900/40 backdrop-blur-md flex-col p-6 space-y-8 overflow-y-auto`}
+          mobileMenuOpen ? 'flex animate-in slide-in-from-left duration-200' : 'hidden md:flex'
+        } fixed inset-0 md:relative md:inset-auto z-30 md:z-10 w-full md:w-64 border-r border-slate-800/60 bg-[#111827]/90 md:bg-[#111827]/50 backdrop-blur-xl flex-col p-6 space-y-8 overflow-y-auto`}
       >
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-violet-500 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20">
               A
             </div>
             <span className="font-bold text-lg bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
@@ -155,7 +165,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Mobile close toggle */}
           <button
             onClick={() => setMobileMenuOpen(false)}
-            className="md:hidden text-slate-400 hover:text-white"
+            className="md:hidden text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-850"
           >
             ✕
           </button>
@@ -164,14 +174,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Navigation list */}
         <div className="flex-1 flex flex-col space-y-6">
           <div className="space-y-1">
-            <span className="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <span className="px-4 text-[9px] font-bold uppercase tracking-wider text-[#94A3B8]/60">
               Console Foundation
             </span>
             <nav className="space-y-0.5 mt-2">{renderNavLinks(activePages)}</nav>
           </div>
 
           <div className="space-y-1">
-            <span className="px-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <span className="px-4 text-[9px] font-bold uppercase tracking-wider text-[#94A3B8]/60">
               Platform Roadmap
             </span>
             <nav className="space-y-0.5 mt-2">{renderNavLinks(futurePages, true)}</nav>
@@ -179,7 +189,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         {/* User profile footer */}
-        <div className="border-t border-slate-800 pt-4 flex items-center justify-between">
+        <div className="border-t border-slate-800/60 pt-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <UserButton />
             <div className="text-xs">
@@ -188,7 +198,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   ? `${clerkUser.firstName} ${clerkUser.lastName || ''}`
                   : 'Workspace Member'}
               </p>
-              <p className="text-[10px] text-slate-500 truncate max-w-[130px]">
+              <p className="text-[10px] text-[#94A3B8]/60 truncate max-w-[130px]">
                 {clerkUser?.primaryEmailAddress?.emailAddress}
               </p>
             </div>
@@ -199,12 +209,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-h-screen overflow-y-auto">
         {/* Top Navbar */}
-        <header className="h-16 border-b border-slate-900 bg-slate-950/50 backdrop-blur-md px-6 md:px-8 flex items-center justify-between sticky top-0 z-10">
+        <header className="h-16 border-b border-slate-900 bg-[#0B1220]/80 backdrop-blur-md px-6 md:px-8 flex items-center justify-between sticky top-0 z-10">
           {/* Left: Breadcrumbs */}
-          <div className="flex items-center space-x-2 text-xs md:text-sm text-slate-400">
+          <div className="flex items-center space-x-2 text-xs md:text-sm text-[#94A3B8]">
             {breadcrumbs.map((crumb, idx) => (
               <React.Fragment key={crumb.href}>
-                {idx > 0 && <span className="text-slate-700">/</span>}
+                {idx > 0 && <span className="text-slate-800">/</span>}
                 <Link
                   href={crumb.href}
                   className={`hover:text-slate-200 transition-colors ${
@@ -220,7 +230,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Right: Actions, Search, User Info */}
           <div className="flex items-center space-x-4">
             {/* Search Placeholder */}
-            <div className="hidden md:flex items-center bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-500 cursor-not-allowed">
+            <div className="hidden md:flex items-center bg-[#111827] border border-slate-800/60 rounded-xl px-3 py-1.5 text-xs text-[#94A3B8]/60 cursor-not-allowed">
               <span>Search settings...</span>
               <kbd className="ml-4 text-[9px] bg-slate-950 border border-slate-850 px-1 py-0.5 rounded text-slate-600">
                 ⌘K
@@ -228,12 +238,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
 
             {/* Notification Placeholder */}
-            <button className="p-2 rounded-xl bg-slate-900/50 border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-850 cursor-not-allowed">
+            <button className="p-2 rounded-xl bg-[#111827] border border-slate-800/60 text-[#94A3B8] hover:text-slate-200 hover:bg-slate-850 cursor-not-allowed">
               🔔
             </button>
 
             {/* Active business label */}
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
               {tenantName}
             </span>
           </div>

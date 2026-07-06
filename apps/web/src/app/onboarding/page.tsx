@@ -260,29 +260,29 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center py-12 px-6 lg:px-8">
+    <div className="min-h-screen bg-[#0B1220] text-slate-100 flex flex-col justify-center py-12 px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-xl">
         <div className="flex justify-center">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center font-bold text-white shadow-lg">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-blue-600 to-[#8B5CF6] flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20">
             A
           </div>
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
           Welcome to AutoOps AI
         </h2>
-        <p className="mt-2 text-center text-sm text-slate-400">
+        <p className="mt-2 text-center text-sm text-[#94A3B8]">
           Complete the onboarding setup to build your workspace foundation.
         </p>
 
         {/* Progress bar */}
         <div className="mt-6">
-          <div className="flex justify-between text-xs text-slate-400 mb-1">
+          <div className="flex justify-between text-xs text-[#94A3B8] mb-1">
             <span>Onboarding Progress</span>
             <span>{completionPercentage}%</span>
           </div>
-          <div className="w-full bg-slate-900 rounded-full h-2">
+          <div className="w-full bg-slate-900 border border-slate-800/40 rounded-full h-2.5">
             <div
-              className="bg-violet-600 h-2 rounded-full transition-all duration-500"
+              className="bg-gradient-to-r from-blue-600 to-[#8B5CF6] h-2 rounded-full transition-all duration-500"
               style={{ width: `${completionPercentage}%` }}
             />
           </div>
@@ -290,7 +290,7 @@ export default function OnboardingPage() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-xl">
-        <div className="bg-slate-900/40 border border-slate-800 py-8 px-6 shadow rounded-2xl sm:px-10 space-y-6">
+        <div className="bg-[#111827] border border-slate-800/60 py-8 px-6 shadow-2xl rounded-2xl sm:px-10 space-y-6">
           {error && (
             <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm">
               {error}
@@ -300,12 +300,10 @@ export default function OnboardingPage() {
           {/* STEP 1: BUSINESS PROFILE */}
           {currentStep === '1' && (
             <form onSubmit={handleProfileSubmit} className="space-y-4">
-              <h3 className="text-lg font-semibold text-slate-200">
-                Step 1: Business Profile Details
-              </h3>
+              <h3 className="text-lg font-semibold text-white">Step 1: Business Profile Details</h3>
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300">
+                  <label className="block text-sm font-medium text-slate-200">
                     Legal Business Name
                   </label>
                   <input
@@ -313,44 +311,44 @@ export default function OnboardingPage() {
                     required
                     value={profile.legalBusinessName}
                     onChange={(e) => setProfile({ ...profile, legalBusinessName: e.target.value })}
-                    className="mt-1 w-full bg-slate-950 border border-slate-800 focus:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                    className="mt-1 w-full bg-slate-950/80 border border-slate-800/80 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300">Display Name</label>
+                  <label className="block text-sm font-medium text-slate-200">Display Name</label>
                   <input
                     type="text"
                     required
                     value={profile.displayName}
                     onChange={(e) => setProfile({ ...profile, displayName: e.target.value })}
-                    className="mt-1 w-full bg-slate-950 border border-slate-800 focus:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2"
+                    className="mt-1 w-full bg-slate-950/80 border border-slate-800/80 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300">Industry</label>
+                  <label className="block text-sm font-medium text-slate-200">Industry</label>
                   <input
                     type="text"
                     required
                     value={profile.industry}
                     onChange={(e) => setProfile({ ...profile, industry: e.target.value })}
-                    className="mt-1 w-full bg-slate-950 border border-slate-800 focus:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2"
+                    className="mt-1 w-full bg-slate-950/80 border border-slate-800/80 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300">Country</label>
+                  <label className="block text-sm font-medium text-slate-200">Country</label>
                   <input
                     type="text"
                     required
                     value={profile.country}
                     onChange={(e) => setProfile({ ...profile, country: e.target.value })}
-                    className="mt-1 w-full bg-slate-950 border border-slate-800 focus:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2"
+                    className="mt-1 w-full bg-slate-950/80 border border-slate-800/80 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none transition-all"
                   />
                 </div>
               </div>
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full mt-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:bg-violet-800 text-white text-sm font-medium transition-all shadow-lg"
+                className="w-full mt-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800/50 text-white text-sm font-medium transition-all shadow-lg shadow-blue-500/10 focus:outline-none focus:ring-2 focus:ring-blue-500/55"
               >
                 {submitting ? 'Saving...' : 'Next: Settings Setup'}
               </button>
@@ -360,22 +358,22 @@ export default function OnboardingPage() {
           {/* STEP 2: BUSINESS SETTINGS */}
           {currentStep === '2' && (
             <form onSubmit={handleSettingsSubmit} className="space-y-4">
-              <h3 className="text-lg font-semibold text-slate-200">
+              <h3 className="text-lg font-semibold text-white">
                 Step 2: Operational Settings Configuration
               </h3>
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300">Timezone</label>
+                  <label className="block text-sm font-medium text-slate-200">Timezone</label>
                   <input
                     type="text"
                     required
                     value={settings.timezone}
                     onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
-                    className="mt-1 w-full bg-slate-950 border border-slate-800 focus:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                    className="mt-1 w-full bg-slate-950/80 border border-slate-800/80 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300">
+                  <label className="block text-sm font-medium text-slate-200">
                     Currency (ISO 3-Letter Code)
                   </label>
                   <input
@@ -384,24 +382,24 @@ export default function OnboardingPage() {
                     maxLength={3}
                     value={settings.currency}
                     onChange={(e) => setSettings({ ...settings, currency: e.target.value })}
-                    className="mt-1 w-full bg-slate-950 border border-slate-800 focus:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2"
+                    className="mt-1 w-full bg-slate-950/80 border border-slate-800/80 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300">Language Code</label>
+                  <label className="block text-sm font-medium text-slate-200">Language Code</label>
                   <input
                     type="text"
                     required
                     value={settings.language}
                     onChange={(e) => setSettings({ ...settings, language: e.target.value })}
-                    className="mt-1 w-full bg-slate-950 border border-slate-800 focus:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2"
+                    className="mt-1 w-full bg-slate-950/80 border border-slate-800/80 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none transition-all"
                   />
                 </div>
               </div>
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full mt-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:bg-violet-800 text-white text-sm font-medium transition-all shadow-lg"
+                className="w-full mt-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800/50 text-white text-sm font-medium transition-all shadow-lg shadow-blue-500/10 focus:outline-none focus:ring-2 focus:ring-blue-500/55"
               >
                 {submitting ? 'Saving...' : 'Next: Invite Team'}
               </button>
@@ -411,45 +409,45 @@ export default function OnboardingPage() {
           {/* STEP 3: INVITE TEAM MEMBERS */}
           {currentStep === '3' && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-slate-200">
+              <h3 className="text-lg font-semibold text-white">
                 Step 3: Invite Team Members (Optional)
               </h3>
               <form onSubmit={handleInviteSubmit} className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-300">First Name</label>
+                    <label className="block text-xs font-medium text-slate-350">First Name</label>
                     <input
                       type="text"
                       value={inviteFirstName}
                       onChange={(e) => setInviteFirstName(e.target.value)}
-                      className="mt-1 w-full bg-slate-950 border border-slate-800 focus:border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                      className="mt-1 w-full bg-slate-950/80 border border-slate-800/80 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none transition-all"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-300">Last Name</label>
+                    <label className="block text-xs font-medium text-slate-350">Last Name</label>
                     <input
                       type="text"
                       value={inviteLastName}
                       onChange={(e) => setInviteLastName(e.target.value)}
-                      className="mt-1 w-full bg-slate-950 border border-slate-800 focus:border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2"
+                      className="mt-1 w-full bg-slate-950/80 border border-slate-800/80 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none transition-all"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-300">Email Address</label>
+                  <label className="block text-xs font-medium text-slate-350">Email Address</label>
                   <input
                     type="email"
                     value={inviteEmail}
                     onChange={(e) => setInviteEmail(e.target.value)}
-                    className="mt-1 w-full bg-slate-950 border border-slate-800 focus:border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2"
+                    className="mt-1 w-full bg-slate-950/80 border border-slate-800/80 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-300">Workspace Role</label>
+                  <label className="block text-xs font-medium text-slate-350">Workspace Role</label>
                   <select
                     value={inviteRole}
                     onChange={(e) => setInviteRole(e.target.value as EmployeeRole)}
-                    className="mt-1 w-full bg-slate-950 border border-slate-800 focus:border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none"
+                    className="mt-1 w-full bg-slate-950/80 border border-slate-800/80 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all"
                   >
                     <option value="ADMIN">Admin</option>
                     <option value="MEMBER">Member</option>
@@ -458,7 +456,7 @@ export default function OnboardingPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full mt-2 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-all"
+                  className="w-full mt-2 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 text-xs font-medium transition-all"
                 >
                   {submitting ? 'Inviting...' : 'Add and Invite Member'}
                 </button>
@@ -467,31 +465,31 @@ export default function OnboardingPage() {
               {/* Show invited list */}
               {invitations.length > 0 && (
                 <div className="border-t border-slate-800 pt-3 mt-3">
-                  <p className="text-xs font-semibold text-slate-400 mb-2">
+                  <p className="text-xs font-semibold text-[#94A3B8] mb-2">
                     Invited Members ({invitations.length})
                   </p>
                   <ul className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
                     {invitations.map((inv, idx) => (
                       <li
                         key={idx}
-                        className="flex justify-between items-center text-xs p-2 rounded-lg bg-slate-950/60"
+                        className="flex justify-between items-center text-xs p-2 rounded-lg bg-slate-950/60 border border-slate-900"
                       >
-                        <span className="text-slate-300 font-medium">
+                        <span className="text-slate-200 font-medium">
                           {inv.firstName} {inv.lastName}
                         </span>
-                        <span className="text-slate-500">{inv.email}</span>
+                        <span className="text-[#94A3B8]">{inv.email}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
               )}
 
-              <div className="flex space-x-3 mt-4 pt-2 border-t border-slate-800">
+              <div className="flex space-x-3 mt-4 pt-2 border-t border-slate-800/60">
                 <button
                   type="button"
                   onClick={handleFinish}
                   disabled={submitting}
-                  className="flex-1 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:bg-violet-800 text-white text-sm font-medium transition-all shadow-lg"
+                  className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800/50 text-white text-sm font-medium transition-all shadow-lg shadow-blue-500/10 focus:outline-none focus:ring-2 focus:ring-blue-500/55"
                 >
                   {submitting ? 'Completing...' : 'Finish Setup'}
                 </button>

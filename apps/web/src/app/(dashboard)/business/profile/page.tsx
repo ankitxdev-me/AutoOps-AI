@@ -139,8 +139,8 @@ export default function BusinessProfilePage() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[40vh] space-y-4">
-        <div className="w-12 h-12 rounded-full border-4 border-slate-800 border-t-violet-500 animate-spin" />
-        <p className="text-slate-400 text-sm">Loading business profile...</p>
+        <div className="w-12 h-12 rounded-full border-4 border-slate-800 border-t-blue-500 animate-spin" />
+        <p className="text-[#94A3B8] text-sm">Loading business profile...</p>
       </div>
     );
   }
@@ -160,26 +160,26 @@ export default function BusinessProfilePage() {
 
       <form
         onSubmit={handleSaveProfile}
-        className="bg-slate-900/40 border border-slate-800 rounded-2xl p-8 space-y-8"
+        className="bg-[#111827] border border-slate-800/60 rounded-2xl p-8 space-y-8 shadow-2xl"
       >
         <div>
           <h2 className="text-xl font-semibold text-slate-100 bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
             Business Profile Details
           </h2>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-[#94A3B8] mt-1">
             Update your business identity and contact details used across the dashboard.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">Business Name</label>
+            <label className="text-sm font-medium text-slate-350">Business Name</label>
             <input
               type="text"
               name="legalBusinessName"
               value={profileData.legalBusinessName || ''}
               onChange={handleProfileChange}
-              className={`w-full bg-slate-950/80 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all ${
+              className={`w-full bg-slate-950/80 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
                 profileErrors.legalBusinessName
                   ? 'border-rose-500/50 focus:ring-rose-500/50'
                   : 'border-slate-800 focus:border-slate-700'
@@ -191,13 +191,13 @@ export default function BusinessProfilePage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">Display Name</label>
+            <label className="text-sm font-medium text-slate-350">Display Name</label>
             <input
               type="text"
               name="displayName"
               value={profileData.displayName || ''}
               onChange={handleProfileChange}
-              className={`w-full bg-slate-950/80 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all ${
+              className={`w-full bg-slate-950/80 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
                 profileErrors.displayName
                   ? 'border-rose-500/50 focus:ring-rose-500/50'
                   : 'border-slate-800 focus:border-slate-700'
@@ -209,13 +209,13 @@ export default function BusinessProfilePage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">Business Email</label>
+            <label className="text-sm font-medium text-slate-350">Business Email</label>
             <input
               type="text"
               name="businessEmail"
               value={profileData.businessEmail || ''}
               onChange={handleProfileChange}
-              className={`w-full bg-slate-950/80 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all ${
+              className={`w-full bg-slate-950/80 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
                 profileErrors.businessEmail
                   ? 'border-rose-500/50 focus:ring-rose-500/50'
                   : 'border-slate-800 focus:border-slate-700'
@@ -227,13 +227,13 @@ export default function BusinessProfilePage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">Phone</label>
+            <label className="text-sm font-medium text-slate-350">Phone</label>
             <input
               type="text"
               name="phoneNumber"
               value={profileData.phoneNumber || ''}
               onChange={handleProfileChange}
-              className={`w-full bg-slate-950/80 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all ${
+              className={`w-full bg-slate-950/80 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
                 profileErrors.phoneNumber
                   ? 'border-rose-500/50 focus:ring-rose-500/50'
                   : 'border-slate-800 focus:border-slate-700'
@@ -245,13 +245,13 @@ export default function BusinessProfilePage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">Website</label>
+            <label className="text-sm font-medium text-slate-350">Website</label>
             <input
               type="text"
               name="website"
               value={profileData.website || ''}
               onChange={handleProfileChange}
-              className={`w-full bg-slate-950/80 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all ${
+              className={`w-full bg-slate-950/80 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
                 profileErrors.website
                   ? 'border-rose-500/50'
                   : 'border-slate-800 focus:border-slate-700'
@@ -263,25 +263,25 @@ export default function BusinessProfilePage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">Industry</label>
+            <label className="text-sm font-medium text-slate-350">Industry</label>
             <input
               type="text"
               name="industry"
               value={profileData.industry || ''}
               onChange={handleProfileChange}
-              className="w-full bg-slate-950/80 border border-slate-800 focus:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+              className="w-full bg-slate-950/80 border border-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl px-4 py-3 text-sm focus:outline-none transition-all"
             />
           </div>
 
           <div className="space-y-2 md:col-span-2">
-            <label className="text-sm font-medium text-slate-300">Logo URL</label>
+            <label className="text-sm font-medium text-slate-350">Logo URL</label>
             <input
               type="text"
               name="logoUrl"
               placeholder="https://example.com/logo.png"
               value={profileData.logoUrl || ''}
               onChange={handleProfileChange}
-              className={`w-full bg-slate-950/80 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all ${
+              className={`w-full bg-slate-950/80 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
                 profileErrors.logoUrl
                   ? 'border-rose-500/50 focus:ring-rose-500/50'
                   : 'border-slate-800 focus:border-slate-700'
@@ -293,13 +293,13 @@ export default function BusinessProfilePage() {
           </div>
 
           <div className="space-y-2 md:col-span-2">
-            <label className="text-sm font-medium text-slate-300">Description</label>
+            <label className="text-sm font-medium text-slate-350">Description</label>
             <textarea
               name="businessDescription"
               rows={4}
               value={profileData.businessDescription || ''}
               onChange={handleProfileChange}
-              className={`w-full bg-slate-950/80 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all ${
+              className={`w-full bg-slate-950/80 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
                 profileErrors.businessDescription
                   ? 'border-rose-500/50 focus:ring-rose-500/50'
                   : 'border-slate-800 focus:border-slate-700'
@@ -311,68 +311,68 @@ export default function BusinessProfilePage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">Address Line 1</label>
+            <label className="text-sm font-medium text-slate-350">Address Line 1</label>
             <input
               type="text"
               name="addressLine1"
               value={profileData.addressLine1 || ''}
               onChange={handleProfileChange}
-              className="w-full bg-slate-950/80 border border-slate-800 focus:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2"
+              className="w-full bg-slate-950/80 border border-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl px-4 py-3 text-sm focus:outline-none transition-all"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">Address Line 2</label>
+            <label className="text-sm font-medium text-slate-350">Address Line 2</label>
             <input
               type="text"
               name="addressLine2"
               value={profileData.addressLine2 || ''}
               onChange={handleProfileChange}
-              className="w-full bg-slate-950/80 border border-slate-800 focus:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none"
+              className="w-full bg-slate-950/80 border border-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl px-4 py-3 text-sm focus:outline-none transition-all"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">City</label>
+            <label className="text-sm font-medium text-slate-350">City</label>
             <input
               type="text"
               name="city"
               value={profileData.city || ''}
               onChange={handleProfileChange}
-              className="w-full bg-slate-950/80 border border-slate-800 focus:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none"
+              className="w-full bg-slate-950/80 border border-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl px-4 py-3 text-sm focus:outline-none transition-all"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">State</label>
+            <label className="text-sm font-medium text-slate-350">State</label>
             <input
               type="text"
               name="state"
               value={profileData.state || ''}
               onChange={handleProfileChange}
-              className="w-full bg-slate-950/80 border border-slate-800 focus:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none"
+              className="w-full bg-slate-950/80 border border-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl px-4 py-3 text-sm focus:outline-none transition-all"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">Country</label>
+            <label className="text-sm font-medium text-slate-350">Country</label>
             <input
               type="text"
               name="country"
               value={profileData.country || ''}
               onChange={handleProfileChange}
-              className="w-full bg-slate-950/80 border border-slate-800 focus:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none"
+              className="w-full bg-slate-950/80 border border-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-xl px-4 py-3 text-sm focus:outline-none transition-all"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">Postal Code</label>
+            <label className="text-sm font-medium text-slate-350">Postal Code</label>
             <input
               type="text"
               name="postalCode"
               value={profileData.postalCode || ''}
               onChange={handleProfileChange}
-              className={`w-full bg-slate-950/80 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all ${
+              className={`w-full bg-slate-950/80 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
                 profileErrors.postalCode
                   ? 'border-rose-500/50 focus:ring-rose-500/50'
                   : 'border-slate-800 focus:border-slate-700'
@@ -388,7 +388,7 @@ export default function BusinessProfilePage() {
           <button
             type="submit"
             disabled={saving}
-            className="px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:bg-violet-800/80 text-white font-medium text-sm transition-all duration-200 shadow-lg"
+            className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:bg-blue-800/80 text-white font-medium text-sm transition-all duration-200 shadow-lg shadow-blue-500/10 focus:outline-none focus:ring-2 focus:ring-blue-500/55"
           >
             {saving ? 'Saving...' : 'Save Profile'}
           </button>

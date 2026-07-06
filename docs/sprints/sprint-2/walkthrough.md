@@ -39,31 +39,38 @@ We have successfully implemented, optimized, and verified all modules for **Spri
 - Implemented `/onboarding` step wizard with server-side progress persistence to prevent browser bypasses.
 - Automatically marks tenant status as `"active"` when onboarding step changes to `"completed"`.
 
-### 7. Dashboard Shell (Task 2.7)
+### 7. Dashboard Shell & Premium UI Refactor (Task 2.7 & UI Pass)
 
 - Implemented collapsing sidebar layout containing active and future navigation options (future pages route to placeholder components).
 - Dynamic breadcrumb calculations, Clerk User buttons, and landing KPI metrics widgets.
+- Refactored the dashboard styling using a premium AI SaaS style with theme colors: background `#0B1220`, cards `#111827`, primary `#3B82F6` (blue), secondary `#8B5CF6` (violet), and accent `#14B8A6`.
 
 ---
 
 ## Verification Checklist
 
-| Target Feature          | Test Case Description                                                     | Status    |
-| ----------------------- | ------------------------------------------------------------------------- | --------- |
-| **Authentication**      | Direct access to `/` redirects to Clerk login                             | ✅ Passed |
-|                         | Valid JWT yields `200 OK` on backend endpoints                            | ✅ Passed |
-|                         | Unsafe development mock auth rejects in production environments           | ✅ Passed |
-| **Tenant Isolation**    | Sourcing tenant ID from JWT only (no cross-tenant leakage)                | ✅ Passed |
-|                         | Non-unique business slugs are rejected during setup                       | ✅ Passed |
-| **Profile & Settings**  | Automatic profile/settings setup upon business registration               | ✅ Passed |
-|                         | Invalid currencies/timezones/hours rejected with `400 Bad Request`        | ✅ Passed |
-| **Members**             | Only `OWNER` or `ADMIN` can invite other members                          | ✅ Passed |
-|                         | Duplicate active member or duplicate pending invite yields `409 Conflict` | ✅ Passed |
-|                         | Pagination fetches and appends items correctly                            | ✅ Passed |
-| **Onboarding Redirect** | Active pages redirect to `/onboarding` if onboarding is incomplete        | ✅ Passed |
-|                         | Completed onboarding locks access to `/onboarding` page                   | ✅ Passed |
-| **Dashboard Layout**    | Collapsible sidebar responsive on Desktop vs Mobile viewports             | ✅ Passed |
-|                         | Disabled roadmap tabs display "Coming Soon" page components               | ✅ Passed |
+| Target Feature            | Test Case Description                                                                      | Status    |
+| ------------------------- | ------------------------------------------------------------------------------------------ | --------- |
+| **Authentication**        | Direct access to `/` renders the public landing page                                       | ✅ Passed |
+|                           | Authenticated users on `/` redirected to `/business/create`, `/onboarding` or `/dashboard` | ✅ Passed |
+|                           | Unauthenticated access to protected routes redirects to `/sign-in`                         | ✅ Passed |
+|                           | Valid JWT yields `200 OK` on backend endpoints                                             | ✅ Passed |
+|                           | Unsafe development mock auth rejects in production environments                            | ✅ Passed |
+| **Tenant Isolation**      | Sourcing tenant ID from JWT only (no cross-tenant leakage)                                 | ✅ Passed |
+|                           | Non-unique business slugs are rejected during setup                                        | ✅ Passed |
+| **Profile & Settings**    | Automatic profile/settings setup upon business registration                                | ✅ Passed |
+|                           | Invalid currencies/timezones/hours rejected with `400 Bad Request`                         | ✅ Passed |
+| **Members**               | Only `OWNER` or `ADMIN` can invite other members                                           | ✅ Passed |
+|                           | Duplicate active member or duplicate pending invite yields `409 Conflict`                  | ✅ Passed |
+|                           | Pagination fetches and appends items correctly                                             | ✅ Passed |
+| **Onboarding Redirect**   | Active pages redirect to `/onboarding` if onboarding is incomplete                         | ✅ Passed |
+|                           | Completed onboarding locks access to `/onboarding` page                                    | ✅ Passed |
+| **Dashboard Layout**      | Collapsible sidebar responsive on Desktop vs Mobile viewports                              | ✅ Passed |
+|                           | Disabled roadmap tabs display "Coming Soon" page components                                | ✅ Passed |
+| **UI Stabilization Pass** | Palette matches `#0B1220` and `#111827` values                                             | ✅ Passed |
+|                           | Custom `/not-found` (404) and client error boundary (500) pages added                      | ✅ Passed |
+|                           | Legacy duplicate `/settings` and `/members` pages redirected to nested routes              | ✅ Passed |
+|                           | Landing page features, benefits, and call-to-actions display correctly                     | ✅ Passed |
 
 ---
 
@@ -84,15 +91,17 @@ We have successfully implemented, optimized, and verified all modules for **Spri
 pnpm --filter api run test
 ```
 
-- `PASS src/app.controller.spec.ts`
-- `PASS src/common/guards/clerk-auth.guard.spec.ts`
-- `PASS src/modules/auth/auth.controller.spec.ts`
-- `PASS src/modules/businesses/businesses.service.spec.ts`
-- `PASS src/modules/businesses/businesses.controller.spec.ts`
-- `PASS src/modules/members/members.service.spec.ts`
-- `PASS src/modules/members/members.controller.spec.ts`
-- `PASS src/modules/onboarding/onboarding.service.spec.ts`
-- `PASS src/modules/onboarding/onboarding.controller.spec.ts`
+| Suite                           | Result  |
+| ------------------------------- | ------- |
+| `app.controller.spec.ts`        | ✅ PASS |
+| `clerk-auth.guard.spec.ts`      | ✅ PASS |
+| `auth.controller.spec.ts`       | ✅ PASS |
+| `businesses.service.spec.ts`    | ✅ PASS |
+| `businesses.controller.spec.ts` | ✅ PASS |
+| `members.service.spec.ts`       | ✅ PASS |
+| `members.controller.spec.ts`    | ✅ PASS |
+| `onboarding.service.spec.ts`    | ✅ PASS |
+| `onboarding.controller.spec.ts` | ✅ PASS |
 
 **9 suites · 77 tests · 0 failures**
 
@@ -104,8 +113,8 @@ pnpm exec turbo run build lint typecheck
 
 **16/16 tasks successful** across 8 packages — zero errors.
 
-- `/` route: 5.16 kB (176 kB First Load JS)
+- `/` route: 5.24 kB (176 kB First Load JS)
 - `/business/members` route: 8.15 kB (185 kB First Load JS)
 - `/business/profile` route: 2.21 kB (179 kB First Load JS)
-- `/business/settings` route: 2.55 kB (179 kB First Load JS)
+- `/business/settings` route: 2.55 kB (180 kB First Load JS)
 - `/onboarding` route: 2.96 kB (174 kB First Load JS)

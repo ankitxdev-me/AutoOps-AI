@@ -169,26 +169,26 @@ export default function BusinessSettingsPage() {
 
       <form
         onSubmit={handleSaveSettings}
-        className="bg-slate-900/40 border border-slate-800 rounded-2xl p-8 space-y-8"
+        className="bg-[#111827] border border-slate-800/60 rounded-2xl p-8 space-y-8 shadow-2xl"
       >
         <div>
           <h2 className="text-xl font-semibold text-slate-100 bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
             Operational Settings
           </h2>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-[#94A3B8] mt-1">
             Configure date formats, default currency, timezones, and regional configurations.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">Timezone</label>
+            <label className="text-sm font-medium text-slate-350">Timezone</label>
             <input
               type="text"
               name="timezone"
               value={settingsData.timezone || ''}
               onChange={handleSettingsChange}
-              className={`w-full bg-slate-950/80 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all ${
+              className={`w-full bg-slate-950/80 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
                 settingsErrors.timezone
                   ? 'border-rose-500/50 focus:ring-rose-500/50'
                   : 'border-slate-800 focus:border-slate-700'
@@ -200,14 +200,14 @@ export default function BusinessSettingsPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">Default Currency</label>
+            <label className="text-sm font-medium text-slate-350">Default Currency</label>
             <input
               type="text"
               name="currency"
               placeholder="e.g. USD"
               value={settingsData.currency || ''}
               onChange={handleSettingsChange}
-              className={`w-full bg-slate-950/80 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all ${
+              className={`w-full bg-slate-950/80 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
                 settingsErrors.currency
                   ? 'border-rose-500/50 focus:ring-rose-500/50'
                   : 'border-slate-800 focus:border-slate-700'
@@ -219,14 +219,14 @@ export default function BusinessSettingsPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">Language Code</label>
+            <label className="text-sm font-medium text-slate-350">Language Code</label>
             <input
               type="text"
               name="language"
               placeholder="e.g. en"
               value={settingsData.language || ''}
               onChange={handleSettingsChange}
-              className={`w-full bg-slate-950/80 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all ${
+              className={`w-full bg-slate-950/80 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
                 settingsErrors.language
                   ? 'border-rose-500/50 focus:ring-rose-500/50'
                   : 'border-slate-800 focus:border-slate-700'
@@ -238,14 +238,14 @@ export default function BusinessSettingsPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">Default Country (ISO)</label>
+            <label className="text-sm font-medium text-slate-350">Default Country (ISO)</label>
             <input
               type="text"
               name="defaultCountry"
               placeholder="e.g. US"
               value={settingsData.defaultCountry || ''}
               onChange={handleSettingsChange}
-              className={`w-full bg-slate-950/80 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all ${
+              className={`w-full bg-slate-950/80 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all ${
                 settingsErrors.defaultCountry
                   ? 'border-rose-500/50 focus:ring-rose-500/50'
                   : 'border-slate-800 focus:border-slate-700'
@@ -257,12 +257,12 @@ export default function BusinessSettingsPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">Date Format</label>
+            <label className="text-sm font-medium text-slate-350">Date Format</label>
             <select
               name="dateFormat"
               value={settingsData.dateFormat || 'YYYY-MM-DD'}
               onChange={handleSettingsChange}
-              className="w-full bg-slate-950/80 border border-slate-800 focus:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none"
+              className="w-full bg-slate-950/80 border border-slate-800 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white focus:outline-none transition-all"
             >
               <option value="YYYY-MM-DD">YYYY-MM-DD</option>
               <option value="DD/MM/YYYY">DD/MM/YYYY</option>
@@ -273,12 +273,12 @@ export default function BusinessSettingsPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">Time Format</label>
+            <label className="text-sm font-medium text-slate-350">Time Format</label>
             <select
               name="timeFormat"
               value={settingsData.timeFormat || '24h'}
               onChange={handleSettingsChange}
-              className="w-full bg-slate-950/80 border border-slate-800 focus:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none"
+              className="w-full bg-slate-950/80 border border-slate-800 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white focus:outline-none transition-all"
             >
               <option value="24h">24-hour (24h)</option>
               <option value="12h">12-hour (12h)</option>
@@ -286,12 +286,12 @@ export default function BusinessSettingsPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">Week Starts On</label>
+            <label className="text-sm font-medium text-slate-350">Week Starts On</label>
             <select
               name="weekStartsOn"
               value={settingsData.weekStartsOn !== undefined ? settingsData.weekStartsOn : 1}
               onChange={handleSettingsChange}
-              className="w-full bg-slate-950/80 border border-slate-800 focus:border-slate-700 rounded-xl px-4 py-3 text-sm focus:outline-none"
+              className="w-full bg-slate-950/80 border border-slate-800 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white focus:outline-none transition-all"
             >
               <option value={0}>Sunday</option>
               <option value={1}>Monday</option>
@@ -305,10 +305,10 @@ export default function BusinessSettingsPage() {
         </div>
 
         {/* Business Hours */}
-        <div className="space-y-4 pt-4 border-t border-slate-800">
+        <div className="space-y-4 pt-4 border-t border-slate-800/60">
           <div>
             <h3 className="text-md font-semibold text-slate-200">Weekly Business Hours</h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-[#94A3B8] mt-0.5">
               Define operational start and end times for each day.
             </p>
           </div>
@@ -323,7 +323,7 @@ export default function BusinessSettingsPage() {
               return (
                 <div
                   key={day}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-slate-950/50 border border-slate-900 space-y-3 sm:space-y-0 sm:space-x-4"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-slate-950/50 border border-slate-900 space-y-3 sm:space-y-0 sm:space-x-4 transition-all"
                 >
                   <span className="text-sm font-medium text-slate-300 capitalize min-w-[100px]">
                     {day}
@@ -335,7 +335,7 @@ export default function BusinessSettingsPage() {
                         type="checkbox"
                         checked={hours.closed}
                         onChange={(e) => handleBusinessHoursChange(day, 'closed', e.target.checked)}
-                        className="rounded border-slate-800 bg-slate-900 text-violet-600 focus:ring-violet-500"
+                        className="rounded border-slate-800 bg-slate-900 text-blue-600 focus:ring-blue-500"
                       />
                       <span>Closed</span>
                     </label>
@@ -346,10 +346,10 @@ export default function BusinessSettingsPage() {
                       disabled={hours.closed}
                       value={hours.open || ''}
                       onChange={(e) => handleBusinessHoursChange(day, 'open', e.target.value)}
-                      className="w-20 text-center bg-slate-900 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none"
+                      className="w-20 text-center bg-slate-900 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:border-blue-500"
                     />
 
-                    <span className="text-slate-600 text-xs">to</span>
+                    <span className="text-slate-650 text-xs">to</span>
 
                     <input
                       type="text"
@@ -357,7 +357,7 @@ export default function BusinessSettingsPage() {
                       disabled={hours.closed}
                       value={hours.close || ''}
                       onChange={(e) => handleBusinessHoursChange(day, 'close', e.target.value)}
-                      className="w-20 text-center bg-slate-900 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none"
+                      className="w-20 text-center bg-slate-900 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:border-blue-500"
                     />
                   </div>
                 </div>
@@ -370,7 +370,7 @@ export default function BusinessSettingsPage() {
           <button
             type="submit"
             disabled={saving}
-            className="px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:bg-violet-800/80 text-white font-medium text-sm transition-all duration-200 shadow-lg"
+            className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:bg-blue-800/80 text-white font-medium text-sm transition-all duration-200 shadow-lg shadow-blue-500/10 focus:outline-none focus:ring-2 focus:ring-blue-500/55"
           >
             {saving ? 'Saving...' : 'Save Settings'}
           </button>
