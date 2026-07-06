@@ -18,6 +18,31 @@ We have successfully implemented and verified **Task 2.1 — Clerk Authenticatio
 
 ---
 
+## Security Refinements (Task 2.1 Patch)
+
+Following a production security audit, the mock authentication flow was hardened with the following strict environment rules:
+
+### 1. Production Authentication Flow
+
+- When `NODE_ENV=production`, Clerk JWT validation is **strictly mandatory**.
+- No mock credentials bypass or fallback is allowed under any circumstance.
+- The guard demands an explicit `CLERK_SECRET_KEY` in environment variables. If absent, the guard fails with a `401 Unauthorized` exception to protect downstream systems.
+
+### 2. Development Mock Authentication
+
+- Mock authentication bypass is only enabled if:
+  1. The environment is **not** production (`NODE_ENV !== 'production'`).
+  2. The explicit environment flag `ENABLE_MOCK_AUTH=true` is set.
+  3. The bearer token starts with `"mock-"`.
+- If `ENABLE_MOCK_AUTH` is missing or set to `false`, the backend fails back to real Clerk JWKS validation.
+
+### 3. Test Authentication
+
+- Unit tests explicitly verify the separation of mock and production states.
+- Removed all inline fallback secrets (such as `"sk_test_mock_secret"`) to force secure configuration from environment variables.
+
+---
+
 ## Verification Results
 
 ### 1. Automated Unit/Integration Tests
@@ -29,7 +54,7 @@ pnpm --filter api run test
 ```
 
 - `PASS src/app.controller.spec.ts`
-- `PASS src/common/guards/clerk-auth.guard.spec.ts` (asserts valid tokens unlock, invalid and missing credentials fail)
+- `PASS src/common/guards/clerk-auth.guard.spec.ts` (asserts valid tokens unlock, invalid and missing credentials fail, production rejects mock tokens, development accepts mock tokens only when ENABLE_MOCK_AUTH=true)
 - `PASS src/modules/auth/auth.controller.spec.ts` (asserts `/auth/me` resolves valid JWT payloads)
 
 ### 2. Workspace Monorepo Build checks
