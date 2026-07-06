@@ -79,7 +79,7 @@ Establish the relational Prisma database models for multi-tenant isolation and i
   - _(Note: Department, Role, Permission, RolePermission, and EmployeeRole tables are omitted for now. Advanced RBAC is deferred to a future sprint)._
 - **Prisma Migration**: Run `pnpm exec prisma migrate dev --name business-foundation` to create the initial tables.
 - **Backend Business Controller & Service**:
-  - `POST /api/v1/businesses` - Create new tenant business shell, mapping the creating user as the `OWNER` employee.
+  - `POST /api/v1/businesses` - Create new tenant business shell, mapping the creating user as the `OWNER` employee. A user may create only one business during Sprint 2. Multi-business ownership will be introduced in a future sprint.
 - **Multi-Tenant Context Guard/Middleware**:
   - Resolve the active `Employee` and `tenantId` from the verified User ID.
   - Attach a validated `tenantContext` object `{ userId, tenantId, employeeId }` to the request object for use by domain modules.
@@ -120,7 +120,7 @@ Implement the business profile schema and endpoints, enabling businesses to stor
 #### Deliverables
 
 - **Prisma Schema Update**:
-  - `BusinessProfile` model: UUID, tenantId (unique foreign key), industry, status, details (JSONB), timestamps.
+  - `BusinessProfile` model: UUID, tenantId (unique foreign key), industry, status, details (JSONB), timestamps. A default `BusinessProfile` is automatically created together with the `Tenant` (to avoid an unnecessary creation endpoint lifecycle).
 - **Backend API Endpoints**:
   - `GET /api/v1/businesses/active/profile` - Retrieve the AI-onboarded profile details for the active tenant.
   - `PATCH /api/v1/businesses/active/profile` - Update profile properties (name, contact email, phone, custom branding colors, logo URL).
@@ -293,7 +293,7 @@ Design the responsive React dashboard shell featuring layout navigation elements
 
 - **Component Setup**: Install base shadcn/ui primitives (`Button`, `Card`, `Input`, `Label`, `Avatar`, `Badge`, `DropdownMenu`, `Sidebar`, `Separator`) in `apps/web`.
 - **Dashboard Layout Wrapper**: `apps/web/src/app/(dashboard)/layout.tsx`.
-- **Sidebar Component**: Collapsible sidebar with navigation routes: Dashboard, Leads, Workflows, Settings, Members.
+- **Sidebar Component**: Collapsible sidebar with navigation routes: Dashboard, Leads, Workflows, Settings, Members. Disable Leads and Workflows navigation items with a visible "Coming Soon" indicator (or hide them completely until Sprint 3 and Sprint 4) to prevent users from reaching empty pages.
 - **Header Component**: Static business name display (no tenant switch dropdown at this stage, tenant is resolved directly from authenticated user context), notification bell indicator (static), user profile settings action, logout controller.
 - **Static Widgets Shell**: `apps/web/src/app/(dashboard)/page.tsx` displaying empty KPI overview widgets (Leads counter, active workflows list, pending approvals counter) with skeleton loaders.
 
