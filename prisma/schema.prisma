@@ -12,3 +12,54 @@ model SchemaVerification {
   verified  Boolean  @default(true)
   createdAt DateTime @default(now())
 }
+
+model Tenant {
+  id             String     @id @default(uuid())
+  name           String
+  slug           String     @unique
+  industry       String
+  country        String
+  status         String     @default("onboarding_pending")
+  plan           String     @default("free")
+  onboardingStep String     @default("1")
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  deletedAt      DateTime?
+
+  employees      Employee[]
+}
+
+model User {
+  id        String     @id @default(uuid())
+  clerkId   String     @unique
+  email     String     @unique
+  firstName String?
+  lastName  String?
+  avatarUrl String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  employees Employee[]
+}
+
+enum EmployeeRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model Employee {
+  id        String       @id @default(uuid())
+  tenantId  String
+  userId    String
+  role      EmployeeRole @default(MEMBER)
+  status    String       @default("active")
+  title     String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  tenant    Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+}

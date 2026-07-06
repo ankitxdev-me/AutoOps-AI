@@ -1,29 +1,60 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards, Req } from '@nestjs/common';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
-import { User } from '../../common/decorators/user.decorator';
+import { TenantContextGuard } from '../../common/guards/tenant-context.guard';
+import { Request } from 'express';
+
+interface AuthenticatedRequest extends Request {
+  dbUser?: {
+    id: string;
+    clerkId: string;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    avatarUrl?: string;
+  };
+  tenantContext?: {
+    userId: string;
+    tenantId: string;
+    employeeId: string;
+    role: string;
+    tenantName: string;
+  } | null;
+}
 
 @Controller('auth')
+@UseGuards(ClerkAuthGuard, TenantContextGuard)
 export class AuthController {
   @Get('me')
-  @UseGuards(ClerkAuthGuard)
-  getMe(@User() user: Record<string, unknown> | undefined) {
+  getMe(@Req() req: AuthenticatedRequest) {
+    const user = req.dbUser;
     if (!user) {
-      return { success: false, data: null };
+      return {
+        success: false,
+        data: null,
+      };
     }
-    const clerkId = typeof user.clerkId === 'string' ? user.clerkId : '';
-    const email = typeof user.email === 'string' ? user.email : '';
+
+    const tenantContext = req.tenantContext;
+
     return {
       success: true,
       data: {
         user: {
-          id: 'usr_' + clerkId.replace('user_', ''),
-          clerkId: clerkId,
-          email: email,
-          firstName: 'Ankit',
-          lastName: 'Sharma',
-          avatarUrl: 'https://img.clerk.com/placeholder',
+          id: user.id,
+          clerkId: user.clerkId,
+          email: user.email,
+          firstName: user.firstName || '',
+          lastName: user.lastName || '',
+          avatarUrl: user.avatarUrl || '',
         },
-        activeEmployee: null,
+        activeEmployee: tenantContext
+          ? {
+              id: tenantContext.employeeId,
+              tenantId: tenantContext.tenantId,
+              tenantName: tenantContext.tenantName,
+              role: tenantContext.role,
+            }
+          : null,
       },
     };
   }

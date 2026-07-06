@@ -1,8 +1,26 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
-import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { TenantContextGuard } from '../../common/guards/tenant-context.guard';
 import { Request } from 'express';
+
+interface AuthenticatedRequest extends Request {
+  dbUser?: {
+    id: string;
+    clerkId: string;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    avatarUrl?: string;
+  };
+  tenantContext?: {
+    userId: string;
+    tenantId: string;
+    employeeId: string;
+    role: string;
+    tenantName: string;
+  } | null;
+}
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -13,20 +31,11 @@ describe('AuthController', () => {
     })
       .overrideGuard(ClerkAuthGuard)
       .useValue({
-        canActivate: (context: ExecutionContext) => {
-          const request = context
-            .switchToHttp()
-            .getRequest<Request & { user?: Record<string, unknown> }>();
-          const authHeader = request.headers['authorization'];
-          if (authHeader === 'Bearer mock-valid-token') {
-            request.user = {
-              clerkId: 'user_2Tsh3p8J38d9',
-              email: 'ankit@autoops.ai',
-            };
-            return true;
-          }
-          throw new UnauthorizedException('Invalid token');
-        },
+        canActivate: () => true,
+      })
+      .overrideGuard(TenantContextGuard)
+      .useValue({
+        canActivate: () => true,
       })
       .compile();
 
@@ -38,11 +47,19 @@ describe('AuthController', () => {
   });
 
   it('should return user info when authenticated', () => {
-    const mockUser = {
-      clerkId: 'user_2Tsh3p8J38d9',
-      email: 'ankit@autoops.ai',
-    };
-    const result = controller.getMe(mockUser);
+    const mockRequest = {
+      dbUser: {
+        id: 'usr_2Tsh3p8J38d9',
+        clerkId: 'user_2Tsh3p8J38d9',
+        email: 'ankit@autoops.ai',
+        firstName: 'Ankit',
+        lastName: 'Sharma',
+        avatarUrl: 'https://img.clerk.com/placeholder',
+      },
+      tenantContext: null,
+    } as unknown as AuthenticatedRequest;
+
+    const result = controller.getMe(mockRequest);
     expect(result.success).toBe(true);
     expect(result.data.user.clerkId).toBe('user_2Tsh3p8J38d9');
     expect(result.data.user.email).toBe('ankit@autoops.ai');
