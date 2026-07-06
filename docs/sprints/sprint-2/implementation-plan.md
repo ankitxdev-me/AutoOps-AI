@@ -12,7 +12,7 @@
 
 1. **Strict Multi-Tenancy**: Every backend database query must resolve the active `tenantId` from the authenticated request context. Under no circumstances should cross-tenant data leak.
 2. **AI Decides, Engine Executes**: The AI (Gemini) is not integrated in Sprint 2. All operations are deterministic, triggered by dashboard endpoints and onboarding forms.
-3. **Clerk as Identity Provider**: User credentials, signup, and login are delegated to Clerk. The AutoOps API resolves the Clerk JWT, maps it to the internal `User` and `Employee` records, and handles organization selection.
+3. **Clerk as Identity Provider**: User credentials, signup, and login are delegated to Clerk. The AutoOps API resolves the Clerk JWT, maps it to the internal `User` and `Employee` records, and handles active tenant resolution directly.
 4. **No Code Placeholders**: Avoid mock files or draft placeholders. Code must be fully implemented, typed, and linted.
 
 ---
@@ -33,8 +33,8 @@ Configure Clerk authentication for the Next.js frontend (`apps/web`) and NestJS 
 - **Protected Frontend Routes**: Establish Middleware to redirect unauthenticated traffic to `/sign-in` and `/sign-up`.
 - **Backend Clerk Guard**: Install `@clerk/clerk-sdk-node` or configure a custom JWT verification guard in `apps/api` utilizing Clerk's JSON Web Key Set (JWKS).
 - **Backend Auth Controller & Service**:
-  - `GET /api/v1/auth/me` - Resolves authenticated User details and lists available tenants.
-  - `POST /api/v1/auth/organization-select` - Sets the active tenant for subsequent session requests.
+  - `GET /api/v1/auth/me` - Resolves authenticated User details, their active tenant context, and current organization membership.
+  - _(Note: POST /api/v1/auth/organization-select is removed; organization switching is deferred to a future sprint. Active tenant is resolved directly from the authenticated user context)._
 - **Root `.env` Updates**: Add `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_JWT_KEY` (or JWKS URL) to `.env` and `.env.example`.
 
 #### Dependencies
@@ -73,12 +73,13 @@ Establish the relational Prisma database models for multi-tenant isolation and i
 #### Deliverables
 
 - **Prisma Schema Update**:
-  - `Tenant` model: UUID, name, slug, status (enum: `onboarding_pending`, `onboarding_interview`, `active`, `suspended`), plan, timestamps, soft-delete field.
+  - `Tenant` model: UUID, name, slug, status (enum: `onboarding_pending`, `onboarding_interview`, `active`, `suspended`), plan, onboardingStep (String representing progress status), timestamps, soft-delete field.
   - `User` model: UUID, clerkId (unique), email (unique), firstName, lastName, avatarUrl, timestamps.
-  - `Employee` model: UUID, tenantId (foreign key), userId (foreign key), title, status (enum), isOwner (boolean), timestamps.
+  - `Employee` model: UUID, tenantId (foreign key), userId (foreign key), role (enum: `OWNER`, `ADMIN`, `MEMBER`), title, status (enum), timestamps.
+  - _(Note: Department, Role, Permission, RolePermission, and EmployeeRole tables are omitted for now. Advanced RBAC is deferred to a future sprint)._
 - **Prisma Migration**: Run `pnpm exec prisma migrate dev --name business-foundation` to create the initial tables.
 - **Backend Business Controller & Service**:
-  - `POST /api/v1/businesses` - Create new tenant business shell, mapping the creating user as the `isOwner: true` employee.
+  - `POST /api/v1/businesses` - Create new tenant business shell, mapping the creating user as the `OWNER` employee.
 - **Multi-Tenant Context Guard/Middleware**:
   - Resolve the active `Employee` and `tenantId` from the verified User ID.
   - Attach a validated `tenantContext` object `{ userId, tenantId, employeeId }` to the request object for use by domain modules.
@@ -91,7 +92,7 @@ Establish the relational Prisma database models for multi-tenant isolation and i
 
 1. Run the database migration and verify `Tenant`, `User`, and `Employee` tables are created in PostgreSQL.
 2. Authenticate, call `POST /api/v1/businesses` with body `{"name": "Aura Realty", "industry": "real_estate", "country": "IN"}`.
-3. Verify database shows one new `Tenant` record and a matching `Employee` record linked to the user with `isOwner = true`.
+3. Verify database shows one new `Tenant` record and a matching `Employee` record linked to the user with `role = OWNER`.
 4. Send requests without tenant context; verify they are rejected with HTTP 403.
 
 #### Acceptance Criteria
@@ -194,18 +195,17 @@ Implement tenant-specific operational settings (timezone, currency, default para
 
 #### Purpose
 
-Implement the organization structure and RBAC metadata, allowing owners to view members and assign foundational roles (Owner, Admin, Agent).
+Establish organization membership mapping and a simplified employee directory context. This facilitates tracking which users belong to which business and assigns basic ownership status, preparing the layout shell without implementing complex permissions.
 
 #### Deliverables
 
 - **Prisma Schema Update**:
-  - `Department` model: UUID, tenantId, name.
-  - `Role` model: UUID, tenantId, name, isSystem (boolean).
-  - `Permission` model: UUID, name, description.
-  - Link `Employee` to `Department`, and establish many-to-many relationship mappings between `Employee` and `Role`, and `Role` and `Permission`.
+  - Store the membership role directly on the `Employee` model as a database enum: `OWNER`, `ADMIN`, `MEMBER`.
+  - Link `Employee` directly to `User` and `Tenant`.
+  - _(Note: Do NOT implement Department, Role, Permission, RolePermission, or EmployeeRole tables, advanced RBAC, permission guards, or permission matrix. Advanced RBAC is deferred to a future sprint)._
 - **Backend API Endpoints**:
-  - `GET /api/v1/businesses/active/members` - Lists all employees in the current active business tenant with pagination.
-  - `POST /api/v1/businesses/active/members/invite` - Invites a new employee by generating a workspace member shell.
+  - `GET /api/v1/businesses/active/members` - Lists all employees in the current active business tenant with cursor-based pagination.
+  - `POST /api/v1/businesses/active/members/invite` - Generates a pending Employee membership shell under the current Tenant (no mailer integration yet).
 
 #### Dependencies
 
@@ -213,23 +213,23 @@ Implement the organization structure and RBAC metadata, allowing owners to view 
 
 #### Verification Steps
 
-1. Run database seeding script to populate default system roles (`Owner`, `Admin`, `Agent`).
-2. Query `GET /api/v1/businesses/active/members` and verify it returns all tenant employees with their firstName, lastName, department, and roles.
-3. Invite an employee; verify a new `Employee` record is added to the database under the correct tenant with status `pending`.
+1. Run database migration; verify `Employee` table includes a `role` enum field (`OWNER`, `ADMIN`, `MEMBER`).
+2. Query `GET /api/v1/businesses/active/members` and verify it returns all tenant employees with their identity details and simple role.
+3. Invite an employee; verify a new `Employee` record is added to the database under the correct tenant with status `PENDING` and role `MEMBER`.
 
 #### Acceptance Criteria
 
-- Permissions are strictly read-only inside application guards (RBAC).
-- A user cannot list or manipulate employees of another tenant (cross-tenant check).
-- The pagination response contains cursor details mapping to the cursor-pagination strategy.
+- Employee records are strictly scoped by `tenantId`.
+- Member listings require standard authentication and active tenant context.
+- Foundational roles (`OWNER`, `ADMIN`, `MEMBER`) support basic business operations without granular permission checks.
 
 #### Estimated Time
 
-5 hours
+4 hours
 
 #### Expected Git Commit Message
 
-`feat(members): implement basic role assignment and member directory api`
+`feat(members): implement simplified membership and member directory api`
 
 ---
 
@@ -237,20 +237,25 @@ Implement the organization structure and RBAC metadata, allowing owners to view 
 
 #### Purpose
 
-Scaffold the multi-step business onboarding UI flow on the Next.js frontend, managing progression states as the owner registers their organization details.
+Scaffold the multi-step business onboarding UI flow on the Next.js frontend, persisting onboarding step progression directly in the database so progress survives refreshes and works across multiple client devices.
 
 #### Deliverables
 
+- **Database Persistence**:
+  - Store `onboardingStep` directly in the database (on the `Tenant` model).
+- **Backend API Endpoints**:
+  - `GET /api/v1/onboarding/status` - Retrieves the active tenant's onboarding progress step from the database.
+  - `PATCH /api/v1/onboarding/step` - Persists the current onboarding progress step to the database.
 - **Onboarding Page Layout**: Create `/onboarding` route in `apps/web`.
 - **Step Components (Onboarding Skeleton)**:
   - Step 1: Create Business Shell (Name, Industry, Country).
   - Step 2: Basic Business Details (Branding placeholder, email, phone).
   - Step 3: Localization Details (Select Timezone, Currency).
   - Step 4: Progress Confirmation & Setup Completion.
-- **State Management**: Persist step state in URL query parameters or client-side storage to support browser history.
-- **Onboarding Status API**:
-  - `GET /api/v1/onboarding/status` - Returns the active tenant's onboarding progress step.
-  - `PATCH /api/v1/onboarding/step` - Updates the onboarding progress step.
+- **State Management**:
+  - Frontend requests onboarding status on mount from `GET /api/v1/onboarding/status`.
+  - As the user clicks "Next", the frontend calls `PATCH /api/v1/onboarding/step` to save progress.
+  - _(Note: Do NOT rely on Local Storage or URL parameters for onboarding state. State is persisted server-side)._
 
 #### Dependencies
 
@@ -258,15 +263,15 @@ Scaffold the multi-step business onboarding UI flow on the Next.js frontend, man
 
 #### Verification Steps
 
-1. Access `http://localhost:3000/onboarding`. Check step progress updates as you click Next.
-2. Fill out Step 1; verify backend receives `POST /businesses` with correct payloads.
-3. Reload page; confirm UI correctly restores the active onboarding step based on `GET /onboarding/status`.
+1. Navigate to `/onboarding`. Complete Step 1; verify database updates `onboardingStep` to step 2.
+2. Refresh the browser; verify the UI reads progress from the database and loads Step 2 directly.
+3. Access `/onboarding` from another browser session; verify step progress matches database state.
 
 #### Acceptance Criteria
 
-- No AI chat interview components are loaded yet (placeholder screens only).
-- Form inputs validate formatting (email format, required fields) client-side before dispatching API requests.
-- The onboarding wizard is protected and accessible only to authenticated users who do not have an active onboarding business profile.
+- Onboarding state is completely independent of the client device (persisted in DB).
+- Page loads fetch state dynamically from the API status endpoint.
+- Completed onboarding locks access to `/onboarding` routes.
 
 #### Estimated Time
 
@@ -274,7 +279,7 @@ Scaffold the multi-step business onboarding UI flow on the Next.js frontend, man
 
 #### Expected Git Commit Message
 
-`feat(web): build multi-step business onboarding wizard skeleton`
+`feat(web): persist business onboarding step progress server-side`
 
 ---
 
@@ -289,7 +294,7 @@ Design the responsive React dashboard shell featuring layout navigation elements
 - **Component Setup**: Install base shadcn/ui primitives (`Button`, `Card`, `Input`, `Label`, `Avatar`, `Badge`, `DropdownMenu`, `Sidebar`, `Separator`) in `apps/web`.
 - **Dashboard Layout Wrapper**: `apps/web/src/app/(dashboard)/layout.tsx`.
 - **Sidebar Component**: Collapsible sidebar with navigation routes: Dashboard, Leads, Workflows, Settings, Members.
-- **Header Component**: Active business profile selector (tenant switch dropdown), notification bell indicator (static), user profile settings action, logout controller.
+- **Header Component**: Static business name display (no tenant switch dropdown at this stage, tenant is resolved directly from authenticated user context), notification bell indicator (static), user profile settings action, logout controller.
 - **Static Widgets Shell**: `apps/web/src/app/(dashboard)/page.tsx` displaying empty KPI overview widgets (Leads counter, active workflows list, pending approvals counter) with skeleton loaders.
 
 #### Dependencies
@@ -300,7 +305,7 @@ Design the responsive React dashboard shell featuring layout navigation elements
 
 1. Navigate to `/dashboard` and check layout styling on Desktop (sidebar visible) vs. Mobile (sidebar collapsed into drawer).
 2. Click menu links; verify matching paths load inside the dashboard viewport shell.
-3. Trigger tenant switch in the header dropdown; confirm session context values refresh.
+3. Trigger page reloads; confirm session context values refresh dynamically.
 
 #### Acceptance Criteria
 
