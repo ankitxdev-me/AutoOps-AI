@@ -1,6 +1,6 @@
-# Sprint 2 Walkthrough — Tasks 2.1, 2.2, 2.3, 2.4 & 2.5 Complete
+# Sprint 2 Walkthrough — Tasks 2.1, 2.2, 2.3, 2.4, 2.5, 2.6 & 2.7 Complete
 
-We have successfully implemented and verified **Task 2.1 — Clerk Authentication**, **Task 2.2 — Business (Tenant) Foundation**, **Task 2.3 — Business Profile**, **Task 2.4 — Business Settings**, and **Task 2.5 — Employee & Roles Foundation** for both the NestJS API and the Next.js Web app.
+We have successfully implemented and verified **Task 2.1 — Clerk Authentication**, **Task 2.2 — Business (Tenant) Foundation**, **Task 2.3 — Business Profile**, **Task 2.4 — Business Settings**, **Task 2.5 — Employee & Roles Foundation**, **Task 2.6 — Business Onboarding Skeleton**, and **Task 2.7 — Dashboard Shell** for both the NestJS API and the Next.js Web app.
 
 ## Changes Made
 
@@ -10,90 +10,61 @@ We have successfully implemented and verified **Task 2.1 — Clerk Authenticatio
 - Added protected route middleware checking for public paths ([middleware.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/middleware.ts)).
 - Scaffolded sign-in and sign-up page paths dynamically integrating Clerk forms.
 - Implemented client API utility wrapper supporting JWT fetching dynamically ([api.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/lib/api.ts)).
-- Created dashboard layout under `app/(dashboard)` serving as a premium navigation sidebar container ([layout.tsx](<file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/(dashboard)/layout.tsx>)).
-- Created tabbed settings view at `/settings` with:
+- Created Tabbed settings view at `/settings` with:
   - **Business Profile tab**: Profile updating, responsive grid forms, and client-side validation.
   - **Operational Settings tab**: Timezone selector, currency, week start, and weekly business hours form.
-- Created `/members` page with full team management UI ([page.tsx](<file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/(dashboard)/members/page.tsx>)):
-  - Active member list with role badges (OWNER / ADMIN / MEMBER), avatar initials, and title display.
-  - Cursor-based "Load More" pagination.
-  - Name/email search form.
-  - Invite Member form with per-field client-side validation and constrained role selector (ADMIN / MEMBER only).
-  - Pending Invitations panel listing all PENDING invitation records.
-  - Loading, empty, error, and success notification states.
+- Created `/members` page with full team management UI.
+- Created `/onboarding` multi-step onboarding wizard page ([page.tsx](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/onboarding/page.tsx)).
+- Created Dashboard layout under `app/(dashboard)` serving as a premium navigation sidebar container ([layout.tsx](<file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/(dashboard)/layout.tsx>)):
+  - **Redirect Check**: Integrates a `useEffect` on layout mount to check onboarding completion status. If the tenant's onboarding progress is incomplete (not equal to `"completed"`), it automatically redirects them to `/onboarding`.
+  - **Responsive Sidebar**: Collapsible navigation sidebar containing Console Foundation links (Dashboard, Profile, Settings, Members, Onboarding) and Platform Roadmap links (Leads, Customers, Workflows, Assistant, Analytics, Integrations) which show a "Coming Soon" badge.
+  - **Top Navigation Bar**: Features breadcrumbs resolving dynamically from current route pathname segments, active business indicator, mock global search, notification placeholders, and Clerk User profile.
+- Created landing Dashboard page `/` with welcome card, summary statistics, recent activities overview, and quick action redirects ([page.tsx](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/page.tsx)).
+- Split settings and members views into dedicated routes:
+  - `/business/profile` ([page.tsx](<file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/(dashboard)/business/profile/page.tsx>))
+  - `/business/settings` ([page.tsx](<file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/(dashboard)/business/settings/page.tsx>))
+  - `/business/members` ([page.tsx](<file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/(dashboard)/business/members/page.tsx>))
+- Created generic `ComingSoonPage` layout and wired it for future routes: `/leads`, `/customers`, `/workflows`, `/assistant`, `/analytics`, `/integrations` ([page.tsx](<file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/(dashboard)/coming-soon/page.tsx>)).
 
 ### Backend (`apps/api`)
 
 #### Task 2.1 — Authentication
 
-- Created `ClerkAuthGuard` JWT verification guard integrating Clerk's JWKS verification ([clerk-auth.guard.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/common/guards/clerk-auth.guard.ts)).
-- Created `@User()` param decorator to extract parsed Clerk identity ([user.decorator.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/common/decorators/user.decorator.ts)).
-- Implemented protected `GET /api/v1/auth/me` returning authenticated identity attributes.
+- Created `ClerkAuthGuard` JWT verification guard integrating Clerk's JWKS verification.
+- Created `@User()` param decorator to extract parsed Clerk identity.
 
 #### Task 2.2 — Business Foundation
 
-- Updated schema: `Tenant`, `User`, `Employee` tables ([schema.prisma](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/prisma/schema.prisma)).
-- Migration `business-foundation` applied successfully.
-- Created `TenantContextGuard` — resolves/lazy-syncs Clerk user to PostgreSQL DB user, resolves active `Employee` context, injects `tenantContext` to request.
-- Created `@TenantContext()` param decorator.
-- Implemented `POST /api/v1/businesses` — creates Tenant + Employee(OWNER) in a single transaction.
+- Created `TenantContextGuard` to resolve/lazy-sync Clerk user to PostgreSQL DB user.
+- Implemented `POST /api/v1/businesses` to instantiate new tenants.
 
 #### Task 2.3 — Business Profile
 
-- Updated schema: `BusinessProfile` model ([schema.prisma](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/prisma/schema.prisma)).
-- Migration `business-profile` applied successfully.
-- Default `BusinessProfile` auto-created in the same transaction as `Tenant`.
 - Implemented `GET /api/v1/businesses/active/profile` and `PATCH /api/v1/businesses/active/profile`.
 
 #### Task 2.4 — Business Settings
 
-- Updated schema: `BusinessSettings` model ([schema.prisma](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/prisma/schema.prisma)).
-- Migration `business-settings` applied successfully.
-- Default `BusinessSettings` auto-created in the same transaction as `Tenant`.
 - Implemented `GET /api/v1/businesses/active/settings` and `PATCH /api/v1/businesses/active/settings`.
-- Full validation: timezone, currency (ISO 4217), language, date format (allowlist), time format, week start (0–6), country (ISO 3166), business hours JSON schema.
 
 #### Task 2.5 — Employee & Roles Foundation
 
-- Added `InvitationStatus` enum (`PENDING`, `ACCEPTED`, `CANCELLED`) and `Invitation` model to Prisma schema ([schema.prisma](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/prisma/schema.prisma)).
-  - `Invitation` stores: `tenantId`, `email`, `firstName`, `lastName`, `role` (existing `EmployeeRole` enum), `status`.
-  - `@@unique([tenantId, email])` prevents duplicate invitation records per tenant.
-  - Cascade deletion from `Tenant` ensures orphaned invitations are automatically removed.
-- Migration `employee-foundation` (`20260706123759_employee_foundation`) applied successfully.
-- Created dedicated `MembersModule` ([members.module.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/members/members.module.ts)), `MembersController` ([members.controller.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/members/members.controller.ts)), `MembersService` ([members.service.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/members/members.service.ts)).
-- Registered `MembersModule` in `AppModule` ([app.module.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/app.module.ts)).
-- `GET /api/v1/businesses/active/members`:
-  - Returns all `active` employees for the authenticated tenant with joined `user` identity fields.
-  - Cursor-based pagination (`cursor`, `limit` query params; max 100 per page).
-  - Optional name/email search (`search` query param — case-insensitive Prisma `contains`).
-  - Sorted by `createdAt` ascending.
-- `POST /api/v1/businesses/active/members/invite`:
-  - Accepts `email`, `firstName`, `lastName`, `role` (ADMIN or MEMBER only — OWNER is rejected).
-  - Full field validation with descriptive `400 Bad Request` messages.
-  - `403 Forbidden` when caller's role is `MEMBER`.
-  - `409 Conflict` on duplicate active member or duplicate pending invitation.
-  - Upserts (re-activates) previously `CANCELLED` or `ACCEPTED` invitation records.
-  - Email normalized to lowercase before persistence.
-  - Returns `{ success: true, data: invitation }` envelope.
+- Created `MembersModule` with `GET /members` and `POST /members/invite`.
+
+#### Task 2.6 — Business Onboarding Skeleton
+
+- Created `OnboardingModule`, `OnboardingController`, and `OnboardingService`.
+- Registered `OnboardingModule` in `AppModule` ([app.module.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/app.module.ts)).
+- Implemented `GET /api/v1/onboarding/status`.
+- Implemented `PATCH /api/v1/onboarding/step`.
 
 ---
 
 ## Security Refinements
 
-### Task 2.1 — Auth Guard Hardening
+### Task 2.6 — Onboarding Security Model
 
-- `NODE_ENV=production`: Clerk JWT strictly required — no mock bypass, no fallback secrets.
-- Development mock auth only enabled when `NODE_ENV !== production` **and** `ENABLE_MOCK_AUTH=true`.
-- All inline test secrets removed; configuration is exclusively environment-driven.
-
-### Task 2.5 — Members Security Model
-
-- All member endpoints require `ClerkAuthGuard` + `TenantContextGuard` + `TenantRequiredGuard`.
-- `tenantId` is resolved exclusively from authenticated session context — never from request body or query params.
-- `POST /invite` enforces role check: `MEMBER` receives `403 Forbidden`; only `OWNER` and `ADMIN` may invite.
-- `OWNER` role cannot be assigned via invitation — prevents privilege escalation.
-- Duplicate active member and duplicate pending invitation both rejected with `409 Conflict`.
-- All data scoped to caller's `tenantId` — zero cross-tenant access.
+- All onboarding endpoints require `ClerkAuthGuard` + `TenantContextGuard` + `TenantRequiredGuard`.
+- Onboarding status and step changes are strictly tenant-isolated, resolving `tenantId` from request context token verification.
 
 ---
 
@@ -114,8 +85,10 @@ pnpm --filter api run test
 | `businesses.controller.spec.ts` | ✅ PASS |
 | `members.service.spec.ts`       | ✅ PASS |
 | `members.controller.spec.ts`    | ✅ PASS |
+| `onboarding.service.spec.ts`    | ✅ PASS |
+| `onboarding.controller.spec.ts` | ✅ PASS |
 
-**7 suites · 68 tests · 0 failures**
+**9 suites · 77 tests · 0 failures**
 
 ### Monorepo Build
 
@@ -125,5 +98,8 @@ pnpm exec turbo run build lint typecheck
 
 **16/16 tasks successful** across 8 packages — zero errors.
 
-- `/members` route: 8.44 kB (184 kB First Load JS)
-- `/settings` route: 4.03 kB (179 kB First Load JS)
+- `/` route: 5.16 kB (176 kB First Load JS)
+- `/business/members` route: 8.15 kB (185 kB First Load JS)
+- `/business/profile` route: 2.21 kB (179 kB First Load JS)
+- `/business/settings` route: 2.55 kB (179 kB First Load JS)
+- `/onboarding` route: 2.96 kB (174 kB First Load JS)
