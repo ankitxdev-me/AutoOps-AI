@@ -14,19 +14,20 @@ model SchemaVerification {
 }
 
 model Tenant {
-  id             String     @id @default(uuid())
+  id             String           @id @default(uuid())
   name           String
-  slug           String     @unique
+  slug           String           @unique
   industry       String
   country        String
-  status         String     @default("onboarding_pending")
-  plan           String     @default("free")
-  onboardingStep String     @default("1")
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  status         String           @default("onboarding_pending")
+  plan           String           @default("free")
+  onboardingStep String           @default("1")
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
   deletedAt      DateTime?
 
   employees      Employee[]
+  profile        BusinessProfile?
 }
 
 model User {
@@ -62,4 +63,27 @@ model Employee {
   user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, userId])
+}
+
+model BusinessProfile {
+  id                  String   @id @default(uuid())
+  tenantId            String   @unique
+  legalBusinessName   String
+  displayName         String
+  businessEmail       String?
+  phoneNumber         String?
+  website             String?
+  industry            String
+  businessDescription String?
+  country             String
+  state               String?
+  city                String?
+  addressLine1        String?
+  addressLine2        String?
+  postalCode          String?
+  logoUrl             String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 }

@@ -61,6 +61,17 @@ export class BusinessesService {
         },
       });
 
+      // Automatically create a default BusinessProfile together with the Tenant
+      await tx.businessProfile.create({
+        data: {
+          tenantId: tenant.id,
+          legalBusinessName: data.name,
+          displayName: data.name,
+          industry: data.industry,
+          country: data.country,
+        },
+      });
+
       const employee = await tx.employee.create({
         data: {
           tenantId: tenant.id,
@@ -78,6 +89,48 @@ export class BusinessesService {
           employee,
         },
       };
+    });
+  }
+
+  async getProfile(tenantId: string) {
+    const profile = await this.prisma.businessProfile.findUnique({
+      where: { tenantId },
+    });
+    if (!profile) {
+      throw new BadRequestException('Business profile not found');
+    }
+    return profile;
+  }
+
+  async updateProfile(
+    tenantId: string,
+    data: Partial<import('@prisma/client').BusinessProfile>,
+  ) {
+    const profile = await this.prisma.businessProfile.findUnique({
+      where: { tenantId },
+    });
+    if (!profile) {
+      throw new BadRequestException('Business profile not found');
+    }
+
+    return this.prisma.businessProfile.update({
+      where: { tenantId },
+      data: {
+        legalBusinessName: data.legalBusinessName,
+        displayName: data.displayName,
+        businessEmail: data.businessEmail,
+        phoneNumber: data.phoneNumber,
+        website: data.website,
+        industry: data.industry,
+        businessDescription: data.businessDescription,
+        country: data.country,
+        state: data.state,
+        city: data.city,
+        addressLine1: data.addressLine1,
+        addressLine2: data.addressLine2,
+        postalCode: data.postalCode,
+        logoUrl: data.logoUrl,
+      },
     });
   }
 

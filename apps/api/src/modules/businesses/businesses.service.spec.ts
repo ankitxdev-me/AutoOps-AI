@@ -12,6 +12,9 @@ describe('BusinessesService', () => {
   const mockFindUniqueTenant = jest.fn();
   const mockCreateTenant = jest.fn();
   const mockCreateEmployee = jest.fn();
+  const mockCreateBusinessProfile = jest.fn();
+  const mockFindUniqueBusinessProfile = jest.fn();
+  const mockUpdateBusinessProfile = jest.fn();
 
   const mockPrisma = {
     user: {
@@ -24,6 +27,11 @@ describe('BusinessesService', () => {
     tenant: {
       findUnique: mockFindUniqueTenant,
       create: mockCreateTenant,
+    },
+    businessProfile: {
+      create: mockCreateBusinessProfile,
+      findUnique: mockFindUniqueBusinessProfile,
+      update: mockUpdateBusinessProfile,
     },
     $transaction: jest
       .fn()
@@ -49,78 +57,139 @@ describe('BusinessesService', () => {
     expect(service).toBeDefined();
   });
 
-  it('should throw BadRequestException if user is not synced in DB', async () => {
-    mockFindUniqueUser.mockResolvedValueOnce(null);
+  describe('createBusiness', () => {
+    it('should throw BadRequestException if user is not synced in DB', async () => {
+      mockFindUniqueUser.mockResolvedValueOnce(null);
 
-    await expect(
-      service.createBusiness('clerk_123', {
-        name: 'Zenith Properties',
-        industry: 'real_estate',
-        country: 'IN',
-      }),
-    ).rejects.toThrow(BadRequestException);
-  });
-
-  it('should throw ConflictException if user already owns a business in Sprint 2', async () => {
-    mockFindUniqueUser.mockResolvedValueOnce({ id: 'usr_123' });
-    mockFindFirstEmployee.mockResolvedValueOnce({ id: 'emp_123' });
-
-    await expect(
-      service.createBusiness('clerk_123', {
-        name: 'Zenith Properties',
-        industry: 'real_estate',
-        country: 'IN',
-      }),
-    ).rejects.toThrow(ConflictException);
-  });
-
-  it('should throw ConflictException if slug is duplicate', async () => {
-    mockFindUniqueUser.mockResolvedValueOnce({ id: 'usr_123' });
-    mockFindFirstEmployee.mockResolvedValueOnce(null);
-    mockFindUniqueTenant.mockResolvedValueOnce({
-      id: 'tenant_exist',
-      slug: 'zenith-properties',
+      await expect(
+        service.createBusiness('clerk_123', {
+          name: 'Zenith Properties',
+          industry: 'real_estate',
+          country: 'IN',
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
 
-    await expect(
-      service.createBusiness('clerk_123', {
+    it('should throw ConflictException if user already owns a business in Sprint 2', async () => {
+      mockFindUniqueUser.mockResolvedValueOnce({ id: 'usr_123' });
+      mockFindFirstEmployee.mockResolvedValueOnce({ id: 'emp_123' });
+
+      await expect(
+        service.createBusiness('clerk_123', {
+          name: 'Zenith Properties',
+          industry: 'real_estate',
+          country: 'IN',
+        }),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('should throw ConflictException if slug is duplicate', async () => {
+      mockFindUniqueUser.mockResolvedValueOnce({ id: 'usr_123' });
+      mockFindFirstEmployee.mockResolvedValueOnce(null);
+      mockFindUniqueTenant.mockResolvedValueOnce({
+        id: 'tenant_exist',
+        slug: 'zenith-properties',
+      });
+
+      await expect(
+        service.createBusiness('clerk_123', {
+          name: 'Zenith Properties',
+          industry: 'real_estate',
+          country: 'IN',
+        }),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('should create business, profile, and owner employee in transaction', async () => {
+      mockFindUniqueUser.mockResolvedValueOnce({ id: 'usr_123' });
+      mockFindFirstEmployee.mockResolvedValueOnce(null);
+      mockFindUniqueTenant.mockResolvedValueOnce(null);
+
+      const mockTenant = {
+        id: 'tenant_123',
+        name: 'Zenith Properties',
+        slug: 'zenith-properties',
+        industry: 'real_estate',
+        country: 'IN',
+      };
+      const mockEmployee = {
+        id: 'emp_123',
+        tenantId: 'tenant_123',
+        userId: 'usr_123',
+        role: EmployeeRole.OWNER,
+      };
+
+      mockCreateTenant.mockResolvedValueOnce(mockTenant);
+      mockCreateEmployee.mockResolvedValueOnce(mockEmployee);
+      mockCreateBusinessProfile.mockResolvedValueOnce({ id: 'profile_123' });
+
+      const result = await service.createBusiness('clerk_123', {
         name: 'Zenith Properties',
         industry: 'real_estate',
         country: 'IN',
-      }),
-    ).rejects.toThrow(ConflictException);
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.data.tenant).toEqual(mockTenant);
+      expect(result.data.employee).toEqual(mockEmployee);
+      expect(mockCreateBusinessProfile).toHaveBeenCalledWith({
+        data: {
+          tenantId: 'tenant_123',
+          legalBusinessName: 'Zenith Properties',
+          displayName: 'Zenith Properties',
+          industry: 'real_estate',
+          country: 'IN',
+        },
+      });
+    });
   });
 
-  it('should create business and owner employee in transaction', async () => {
-    mockFindUniqueUser.mockResolvedValueOnce({ id: 'usr_123' });
-    mockFindFirstEmployee.mockResolvedValueOnce(null);
-    mockFindUniqueTenant.mockResolvedValueOnce(null);
+  describe('getProfile', () => {
+    it('should throw BadRequestException if profile does not exist', async () => {
+      mockFindUniqueBusinessProfile.mockResolvedValueOnce(null);
 
-    const mockTenant = {
-      id: 'tenant_123',
-      name: 'Zenith Properties',
-      slug: 'zenith-properties',
-      industry: 'real_estate',
-      country: 'IN',
-    };
-    const mockEmployee = {
-      id: 'emp_123',
-      tenantId: 'tenant_123',
-      userId: 'usr_123',
-      role: EmployeeRole.OWNER,
-    };
-
-    mockCreateTenant.mockResolvedValueOnce(mockTenant);
-    mockCreateEmployee.mockResolvedValueOnce(mockEmployee);
-
-    const result = await service.createBusiness('clerk_123', {
-      name: 'Zenith Properties',
-      industry: 'real_estate',
-      country: 'IN',
+      await expect(service.getProfile('tenant_not_exist')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
-    expect(result.success).toBe(true);
-    expect(result.data.tenant).toEqual(mockTenant);
-    expect(result.data.employee).toEqual(mockEmployee);
+    it('should return business profile if found', async () => {
+      const mockProfile = {
+        id: 'profile_123',
+        tenantId: 'tenant_123',
+        legalBusinessName: 'Test Legal Name',
+      };
+      mockFindUniqueBusinessProfile.mockResolvedValueOnce(mockProfile);
+
+      const result = await service.getProfile('tenant_123');
+      expect(result).toEqual(mockProfile);
+    });
+  });
+
+  describe('updateProfile', () => {
+    it('should throw BadRequestException if profile does not exist for update', async () => {
+      mockFindUniqueBusinessProfile.mockResolvedValueOnce(null);
+
+      await expect(
+        service.updateProfile('tenant_not_exist', {}),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should perform update and return new profile state', async () => {
+      const mockProfile = {
+        id: 'profile_123',
+        tenantId: 'tenant_123',
+        legalBusinessName: 'Old Name',
+      };
+      mockFindUniqueBusinessProfile.mockResolvedValueOnce(mockProfile);
+
+      const updatedProfile = { ...mockProfile, legalBusinessName: 'New Name' };
+      mockUpdateBusinessProfile.mockResolvedValueOnce(updatedProfile);
+
+      const result = await service.updateProfile('tenant_123', {
+        legalBusinessName: 'New Name',
+      });
+      expect(result).toEqual(updatedProfile);
+    });
   });
 });

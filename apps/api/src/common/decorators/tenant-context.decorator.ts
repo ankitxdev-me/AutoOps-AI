@@ -1,12 +1,12 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { Request } from 'express';
 
-export interface TenantContextPayload {
-  userId: string;
-  tenantId: string;
-  employeeId: string;
-  role: 'OWNER' | 'ADMIN' | 'MEMBER';
-  tenantName: string;
+export class TenantContextPayload {
+  userId!: string;
+  tenantId!: string;
+  employeeId!: string;
+  role!: 'OWNER' | 'ADMIN' | 'MEMBER';
+  tenantName!: string;
 }
 
 interface RequestWithTenantContext extends Request {

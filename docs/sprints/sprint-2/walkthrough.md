@@ -1,6 +1,6 @@
-# Sprint 2 Walkthrough — Tasks 2.1 & 2.2 Complete
+# Sprint 2 Walkthrough — Tasks 2.1, 2.2 & 2.3 Complete
 
-We have successfully implemented and verified **Task 2.1 — Clerk Authentication** and **Task 2.2 — Business (Tenant) Foundation** for both the NestJS API and the Next.js Web app.
+We have successfully implemented and verified **Task 2.1 — Clerk Authentication**, **Task 2.2 — Business (Tenant) Foundation**, and **Task 2.3 — Business Profile** for both the NestJS API and the Next.js Web app.
 
 ## Changes Made
 
@@ -9,6 +9,9 @@ We have successfully implemented and verified **Task 2.1 — Clerk Authenticatio
 - Wrapped Next.js application root in `ClerkProvider` ([layout.tsx](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/layout.tsx)).
 - Added protected route middleware checking for public paths ([middleware.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/middleware.ts)).
 - Scaffolded sign-in and sign-up page paths dynamically integrating Clerk forms ([sign-in/page.tsx](<file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/(auth)/sign-in/%5B%5B...sign-in%5D%5D/page.tsx>), [sign-up/page.tsx](<file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/(auth)/sign-up/%5B%5B...sign-up%5D%5D/page.tsx>)).
+- Implemented client API utility wrapper supporting JWT fetching dynamically ([api.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/lib/api.ts)).
+- Created dashboard layout layout.tsx under app/(dashboard) to serve as a premium navigation sidebar and header container ([layout.tsx](<file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/(dashboard)/layout.tsx>)).
+- Created Business Profile Form at `/settings` supporting loading states, save triggers, success/error feedback notifications, responsive layout, and robust client validation ([page.tsx](<file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/web/src/app/(dashboard)/settings/page.tsx>)).
 
 ### Backend (`apps/api`)
 
@@ -27,6 +30,15 @@ We have successfully implemented and verified **Task 2.1 — Clerk Authenticatio
 - Created parameter decorator `TenantContext` to fetch active tenant configurations in module controller endpoints ([tenant-context.decorator.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/common/decorators/tenant-context.decorator.ts)).
 - Implemented businesses domain controller and service supporting `POST /api/v1/businesses` to instantiate new tenants, associate the creating user as `OWNER` of the tenant, validate unique slugs, and enforce the single-business registration limit for Sprint 2 ([businesses.controller.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/businesses/businesses.controller.ts), [businesses.service.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/businesses/businesses.service.ts)).
 - Refactored `GET /api/v1/auth/me` to query database-backed context values resolved via the tenant guards ([auth.controller.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/auth/auth.controller.ts)).
+
+#### Task 2.3 — Business Profile
+
+- Updated database schema to implement the `BusinessProfile` model linked to `Tenant` ([schema.prisma](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/prisma/schema.prisma)).
+- Generated and successfully executed migration `business-profile` against the PostgreSQL database container.
+- Updated `BusinessesService` transaction logic to automatically provision a default shell `BusinessProfile` upon `Tenant` instantiation ([businesses.service.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/businesses/businesses.service.ts)).
+- Implemented `GET /api/v1/businesses/active/profile` to resolve the logged-in tenant's active profile ([businesses.controller.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/businesses/businesses.controller.ts)).
+- Implemented `PATCH /api/v1/businesses/active/profile` supporting validated partial updates of profile details ([businesses.controller.ts](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/apps/api/src/modules/businesses/businesses.controller.ts)).
+- Added comprehensive backend validation checks targeting name constraints, emails, websites, phone numbers, and postal codes.
 
 ---
 
@@ -68,10 +80,10 @@ pnpm --filter api run test
 - `PASS src/app.controller.spec.ts`
 - `PASS src/common/guards/clerk-auth.guard.spec.ts` (asserts valid tokens unlock, invalid and missing credentials fail, production rejects mock tokens, development accepts mock tokens only when ENABLE_MOCK_AUTH=true)
 - `PASS src/modules/auth/auth.controller.spec.ts` (asserts `/auth/me` resolves valid JWT payloads)
-- `PASS src/modules/businesses/businesses.service.spec.ts` (asserts businesses create cleanly, unique slugs resolve, single-business restrictions enforce, and missing user entries block creation)
-- `PASS src/modules/businesses/businesses.controller.spec.ts` (asserts payload validations and bad requests reject appropriately)
+- `PASS src/modules/businesses/businesses.service.spec.ts` (asserts businesses create cleanly, unique slugs resolve, single-business restrictions enforce, and profile CRUD operations map correctly)
+- `PASS src/modules/businesses/businesses.controller.spec.ts` (asserts payload validations and bad requests reject appropriately on both POST and PATCH profiles)
 
-- **Result**: 5 passed, 5 total; 22 passed, 22 total.
+- **Result**: 5 passed, 5 total; 33 passed, 33 total.
 
 ### 2. Workspace Monorepo Build checks
 
