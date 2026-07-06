@@ -8,218 +8,376 @@
 
 ---
 
-## Background
+## Technical Context & Architectural Rules
 
-Sprint 1 established the monorepo workspace. Sprint 2 builds the **business foundation layer**:
-authentication, tenant context resolution, and business entity management.
-
-Per the ROADMAP.md, Sprint 2 objectives are:
-
-> Clerk auth middleware → tenant context middleware → Business Settings API → Members Management → Dashboard shell.
-
-Architecture rules enforced throughout:
-
-- **Strict multi-tenancy**: every query filtered by resolved `tenantId`.
-- **AI decides, Engine executes**: no direct AI-to-database operations.
-- **Clerk is the identity provider** — the backend maps Clerk identities to internal Users and Employees.
+1. **Strict Multi-Tenancy**: Every backend database query must resolve the active `tenantId` from the authenticated request context. Under no circumstances should cross-tenant data leak.
+2. **AI Decides, Engine Executes**: The AI (Gemini) is not integrated in Sprint 2. All operations are deterministic, triggered by dashboard endpoints and onboarding forms.
+3. **Clerk as Identity Provider**: User credentials, signup, and login are delegated to Clerk. The AutoOps API resolves the Clerk JWT, maps it to the internal `User` and `Employee` records, and handles organization selection.
+4. **No Code Placeholders**: Avoid mock files or draft placeholders. Code must be fully implemented, typed, and linted.
 
 ---
 
-## Open Questions
-
-> [!IMPORTANT]
-> **Clerk Setup**: Sprint 2 requires a Clerk application. You will need to:
->
-> 1. Create a Clerk app at https://clerk.com and obtain your publishable + secret keys.
-> 2. Add them to your `.env` file before starting the backend.
->    Do NOT commit real Clerk keys to git.
-
-> [!NOTE]
-> **shadcn/ui**: The architecture specifies shadcn/ui for the frontend. Sprint 2 will initialize it in `apps/web`. This requires a one-time CLI setup that needs approval per component.
+## Sprint 2 Tasks
 
 ---
 
-## Proposed Changes
+### Task 2.1 — Clerk Authentication
+
+#### Purpose
+
+Configure Clerk authentication for the Next.js frontend (`apps/web`) and NestJS backend (`apps/api`), enabling secure user signup, login, session validation, and JWT verification.
+
+#### Deliverables
+
+- **Frontend Config**: Install `@clerk/nextjs` in `apps/web`. Wire `<ClerkProvider>` into `apps/web/src/app/layout.tsx`.
+- **Protected Frontend Routes**: Establish Middleware to redirect unauthenticated traffic to `/sign-in` and `/sign-up`.
+- **Backend Clerk Guard**: Install `@clerk/clerk-sdk-node` or configure a custom JWT verification guard in `apps/api` utilizing Clerk's JSON Web Key Set (JWKS).
+- **Backend Auth Controller & Service**:
+  - `GET /api/v1/auth/me` - Resolves authenticated User details and lists available tenants.
+  - `POST /api/v1/auth/organization-select` - Sets the active tenant for subsequent session requests.
+- **Root `.env` Updates**: Add `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_JWT_KEY` (or JWKS URL) to `.env` and `.env.example`.
+
+#### Dependencies
+
+- Task 1 (Sprint 1 Monorepo)
+
+#### Verification Steps
+
+1. Attempt to access `/dashboard` in Next.js; verify redirection to Clerk's sign-in page.
+2. Sign up a new user via Clerk on the frontend.
+3. Make an HTTP request to `GET /api/v1/auth/me` with a valid Bearer JWT; verify it returns HTTP 200 with user data.
+4. Make the same request with an invalid or expired token; verify HTTP 401.
+
+#### Acceptance Criteria
+
+- Unauthenticated access to private frontend and API routes is blocked.
+- Clerk JWKS validation runs locally without external network lookups per request.
+- The JWT claims map correctly to `req.user.clerkId`.
+
+#### Estimated Time
+
+4 hours
+
+#### Expected Git Commit Message
+
+`feat(auth): configure clerk authentication for frontend and backend`
 
 ---
 
-### Task 1 — Prisma Schema: Business Foundation Models
+### Task 2.2 — Business (Tenant) Foundation
 
-#### [MODIFY] [schema.prisma](file:///c:/Users/ankit/OneDrive/Documents/AutoOps%20AI/prisma/schema.prisma)
+#### Purpose
 
-Replace the placeholder `SchemaVerification` model with the real business foundation entities:
+Establish the relational Prisma database models for multi-tenant isolation and implement the endpoint for creating new businesses.
 
-- `Tenant` — business account (id, name, slug, status, plan, createdAt, updatedAt, deletedAt)
-- `User` — Clerk-mapped platform identity (id, clerkId, email, firstName, lastName, avatarUrl, status)
-- `Employee` — user's membership within a tenant (id, tenantId, userId, title, status, isOwner, createdAt)
-- `Department` — groups employees by function (id, tenantId, name)
-- `Role` — tenant-scoped RBAC role (id, tenantId, name, isSystem)
-- `Permission` — granular capability string (id, name, description)
-- `RolePermission` — join table linking roles to permissions
-- `EmployeeRole` — join table linking employees to roles
-- `BusinessProfile` — structured onboarding result (id, tenantId, industry, status, data JSONB)
-- `BusinessSettings` — tenant configuration (id, tenantId, timezone, locale, currency, settings JSONB)
+#### Deliverables
 
-Run: `pnpm exec prisma migrate dev --name business-foundation`
+- **Prisma Schema Update**:
+  - `Tenant` model: UUID, name, slug, status (enum: `onboarding_pending`, `onboarding_interview`, `active`, `suspended`), plan, timestamps, soft-delete field.
+  - `User` model: UUID, clerkId (unique), email (unique), firstName, lastName, avatarUrl, timestamps.
+  - `Employee` model: UUID, tenantId (foreign key), userId (foreign key), title, status (enum), isOwner (boolean), timestamps.
+- **Prisma Migration**: Run `pnpm exec prisma migrate dev --name business-foundation` to create the initial tables.
+- **Backend Business Controller & Service**:
+  - `POST /api/v1/businesses` - Create new tenant business shell, mapping the creating user as the `isOwner: true` employee.
+- **Multi-Tenant Context Guard/Middleware**:
+  - Resolve the active `Employee` and `tenantId` from the verified User ID.
+  - Attach a validated `tenantContext` object `{ userId, tenantId, employeeId }` to the request object for use by domain modules.
 
----
+#### Dependencies
 
-### Task 2 — NestJS: Clerk Guard & Tenant Middleware
+- Task 2.1 (Clerk Auth)
 
-#### [NEW] `apps/api/src/common/guards/clerk-auth.guard.ts`
+#### Verification Steps
 
-- Validate the `Authorization: Bearer <token>` header using Clerk JWT verification.
-- Reject unauthorized requests with `401 UNAUTHORIZED`.
-- Attach verified Clerk user identity to the request object.
+1. Run the database migration and verify `Tenant`, `User`, and `Employee` tables are created in PostgreSQL.
+2. Authenticate, call `POST /api/v1/businesses` with body `{"name": "Aura Realty", "industry": "real_estate", "country": "IN"}`.
+3. Verify database shows one new `Tenant` record and a matching `Employee` record linked to the user with `isOwner = true`.
+4. Send requests without tenant context; verify they are rejected with HTTP 403.
 
-#### [NEW] `apps/api/src/common/middleware/tenant-context.middleware.ts`
+#### Acceptance Criteria
 
-- After Clerk verification, look up the internal `User` record by `clerkId`.
-- Resolve the active `Employee` record and extract `tenantId`.
-- Attach `{ userId, tenantId, employeeId, roles }` to `req.tenantContext`.
-- Reject requests where no matching tenant context is found with `403 FORBIDDEN`.
+- All tenant-owned records have `tenantId` field and constraints.
+- Foreign key cascading is restricted (deleting a tenant does not hard-delete audit logs).
+- Prisma query filters systematically inject the active `tenantId`.
 
-#### [NEW] `apps/api/src/common/decorators/tenant-context.decorator.ts`
+#### Estimated Time
 
-- `@TenantContext()` parameter decorator to extract resolved tenant context inside controllers.
+6 hours
 
-#### [NEW] `apps/api/src/common/interceptors/response.interceptor.ts`
+#### Expected Git Commit Message
 
-- Wrap all successful responses in the standard envelope:
-  ```json
-  { "success": true, "data": {...} }
-  ```
-- The error envelope is handled by a global exception filter.
-
-#### [NEW] `apps/api/src/common/filters/http-exception.filter.ts`
-
-- Normalize all errors to the documented error envelope format from `API_SPEC.md`.
+`feat(business): implement tenant database models and context middleware`
 
 ---
 
-### Task 3 — NestJS: Auth Module
+### Task 2.3 — Business Profile
 
-#### [NEW] `apps/api/src/modules/auth/auth.module.ts`
+#### Purpose
 
-#### [NEW] `apps/api/src/modules/auth/auth.controller.ts`
+Implement the business profile schema and endpoints, enabling businesses to store their operating profile (industry, localization details, contact information, branding parameters) as resolved during onboarding.
 
-#### [NEW] `apps/api/src/modules/auth/auth.service.ts`
+#### Deliverables
 
-Implements the following endpoints per `API_SPEC.md`:
+- **Prisma Schema Update**:
+  - `BusinessProfile` model: UUID, tenantId (unique foreign key), industry, status, details (JSONB), timestamps.
+- **Backend API Endpoints**:
+  - `GET /api/v1/businesses/active/profile` - Retrieve the AI-onboarded profile details for the active tenant.
+  - `PATCH /api/v1/businesses/active/profile` - Update profile properties (name, contact email, phone, custom branding colors, logo URL).
+- **Validation Schemas**: Write validation decorators (`class-validator` / `zod`) for incoming profile modification payloads.
 
-| Method  | Endpoint                           | Purpose                                        |
-| ------- | ---------------------------------- | ---------------------------------------------- |
-| `GET`   | `/api/v1/auth/me`                  | Return User + active Employee + tenant context |
-| `POST`  | `/api/v1/auth/organization-select` | Switch active tenant                           |
-| `GET`   | `/api/v1/auth/profile`             | Return current User profile                    |
-| `PATCH` | `/api/v1/auth/profile`             | Update display name or avatar                  |
+#### Dependencies
 
----
+- Task 2.2 (Business Foundation)
 
-### Task 4 — NestJS: Business Module
+#### Verification Steps
 
-#### [NEW] `apps/api/src/modules/business/business.module.ts`
+1. Call `PATCH /api/v1/businesses/active/profile` with valid updates. Verify the database updates the profile.
+2. Call the patch endpoint with invalid fields (e.g. invalid email format); verify HTTP 400 validation error envelope.
+3. Call `GET /api/v1/businesses/active/profile` and verify it returns HTTP 200 with the correct profile payload.
 
-#### [NEW] `apps/api/src/modules/business/business.controller.ts`
+#### Acceptance Criteria
 
-#### [NEW] `apps/api/src/modules/business/business.service.ts`
+- Profile updates are isolated to the requester's `tenantId`.
+- Branding logo URLs are validated as standard URL strings.
+- Profile JSONB configuration strictly matches defined TypeScript interfaces.
 
-Implements:
+#### Estimated Time
 
-| Method  | Endpoint                    | Purpose                                       |
-| ------- | --------------------------- | --------------------------------------------- |
-| `POST`  | `/api/v1/business`          | Create a new business (tenant) on first login |
-| `GET`   | `/api/v1/business/profile`  | Get business profile                          |
-| `PATCH` | `/api/v1/business/profile`  | Update business profile                       |
-| `GET`   | `/api/v1/business/settings` | Get business settings                         |
-| `PATCH` | `/api/v1/business/settings` | Update business settings                      |
+4 hours
 
----
+#### Expected Git Commit Message
 
-### Task 5 — NestJS: Members Module
-
-#### [NEW] `apps/api/src/modules/members/members.module.ts`
-
-#### [NEW] `apps/api/src/modules/members/members.controller.ts`
-
-#### [NEW] `apps/api/src/modules/members/members.service.ts`
-
-Implements:
-
-| Method   | Endpoint                 | Purpose                             |
-| -------- | ------------------------ | ----------------------------------- |
-| `GET`    | `/api/v1/members`        | List all employees in the tenant    |
-| `POST`   | `/api/v1/members/invite` | Invite a new employee by email      |
-| `PATCH`  | `/api/v1/members/:id`    | Update employee title or department |
-| `DELETE` | `/api/v1/members/:id`    | Soft-delete an employee             |
+`feat(business): add business profile models and profile management api`
 
 ---
 
-### Task 6 — NestJS: Onboarding Flow
+### Task 2.4 — Business Settings
 
-#### [NEW] `apps/api/src/modules/onboarding/onboarding.module.ts`
+#### Purpose
 
-#### [NEW] `apps/api/src/modules/onboarding/onboarding.controller.ts`
+Implement tenant-specific operational settings (timezone, currency, default parameters, business hours) to drive downstream scheduling and workflow engines.
 
-#### [NEW] `apps/api/src/modules/onboarding/onboarding.service.ts`
+#### Deliverables
 
-Handles new business setup:
+- **Prisma Schema Update**:
+  - `BusinessSettings` model: UUID, tenantId (unique foreign key), timezone, locale, currency, businessHours (JSONB), approvalPolicies (JSONB), timestamps.
+- **Backend API Endpoints**:
+  - `GET /api/v1/businesses/active/settings` - Retrieve tenant configuration settings.
+  - `PATCH /api/v1/businesses/active/settings` - Update timezone, business hours, and policies.
 
-- `POST /api/v1/onboarding/start` — creates Tenant + User + Employee records after Clerk signup.
-- `PATCH /api/v1/onboarding/profile` — saves answers to business interview as `BusinessProfile`.
-- `GET /api/v1/onboarding/status` — returns current onboarding step for UI routing.
+#### Dependencies
+
+- Task 2.2 (Business Foundation)
+
+#### Verification Steps
+
+1. Call `PATCH /api/v1/businesses/active/settings` to modify the timezone and currency. Verify changes persist.
+2. Retrieve the active settings; verify the response contains `timezone`, `currency`, `businessHours`, and `approvalPolicies` fields matching the API spec.
+
+#### Acceptance Criteria
+
+- The timezone field must contain a valid IANA timezone string (e.g. `Asia/Kolkata`).
+- Currency must follow ISO 4217 standard (e.g. `INR`, `USD`).
+- Business settings are scoped strictly by `tenantId`.
+
+#### Estimated Time
+
+4 hours
+
+#### Expected Git Commit Message
+
+`feat(business): add business settings schema and configuration api`
 
 ---
 
-### Task 7 — Frontend: shadcn/ui Setup
+### Task 2.5 — Employee & Roles (Foundation)
 
-#### [MODIFY] `apps/web`
+#### Purpose
 
-- Initialize shadcn/ui CLI inside `apps/web`.
-- Add base components: `Button`, `Card`, `Input`, `Label`, `Avatar`, `Badge`, `Separator`, `Tooltip`, `Skeleton`.
-- Configure Clerk's `<ClerkProvider>` in `apps/web/src/app/layout.tsx`.
+Implement the organization structure and RBAC metadata, allowing owners to view members and assign foundational roles (Owner, Admin, Agent).
+
+#### Deliverables
+
+- **Prisma Schema Update**:
+  - `Department` model: UUID, tenantId, name.
+  - `Role` model: UUID, tenantId, name, isSystem (boolean).
+  - `Permission` model: UUID, name, description.
+  - Link `Employee` to `Department`, and establish many-to-many relationship mappings between `Employee` and `Role`, and `Role` and `Permission`.
+- **Backend API Endpoints**:
+  - `GET /api/v1/businesses/active/members` - Lists all employees in the current active business tenant with pagination.
+  - `POST /api/v1/businesses/active/members/invite` - Invites a new employee by generating a workspace member shell.
+
+#### Dependencies
+
+- Task 2.2 (Business Foundation)
+
+#### Verification Steps
+
+1. Run database seeding script to populate default system roles (`Owner`, `Admin`, `Agent`).
+2. Query `GET /api/v1/businesses/active/members` and verify it returns all tenant employees with their firstName, lastName, department, and roles.
+3. Invite an employee; verify a new `Employee` record is added to the database under the correct tenant with status `pending`.
+
+#### Acceptance Criteria
+
+- Permissions are strictly read-only inside application guards (RBAC).
+- A user cannot list or manipulate employees of another tenant (cross-tenant check).
+- The pagination response contains cursor details mapping to the cursor-pagination strategy.
+
+#### Estimated Time
+
+5 hours
+
+#### Expected Git Commit Message
+
+`feat(members): implement basic role assignment and member directory api`
 
 ---
 
-### Task 8 — Frontend: Dashboard Shell Layout
+### Task 2.6 — Business Onboarding Skeleton
 
-#### [NEW] `apps/web/src/app/(dashboard)/layout.tsx`
+#### Purpose
 
-- Protected route layout using Clerk's `auth()` or `<SignedIn>`.
-- Sidebar navigation: Dashboard, Leads, Workflows, Settings, Members.
-- Top header with tenant name, user avatar, and notification indicator (static for now).
+Scaffold the multi-step business onboarding UI flow on the Next.js frontend, managing progression states as the owner registers their organization details.
 
-#### [NEW] `apps/web/src/app/(dashboard)/page.tsx`
+#### Deliverables
 
-- Dashboard home with static summary cards (Leads, Active Workflows, Members, Pending Approvals).
-- Skeleton loading states.
+- **Onboarding Page Layout**: Create `/onboarding` route in `apps/web`.
+- **Step Components (Onboarding Skeleton)**:
+  - Step 1: Create Business Shell (Name, Industry, Country).
+  - Step 2: Basic Business Details (Branding placeholder, email, phone).
+  - Step 3: Localization Details (Select Timezone, Currency).
+  - Step 4: Progress Confirmation & Setup Completion.
+- **State Management**: Persist step state in URL query parameters or client-side storage to support browser history.
+- **Onboarding Status API**:
+  - `GET /api/v1/onboarding/status` - Returns the active tenant's onboarding progress step.
+  - `PATCH /api/v1/onboarding/step` - Updates the onboarding progress step.
 
-#### [NEW] `apps/web/src/app/(auth)/sign-in/[[...sign-in]]/page.tsx`
+#### Dependencies
 
-#### [NEW] `apps/web/src/app/(auth)/sign-up/[[...sign-up]]/page.tsx`
+- Task 2.3 (Profile APIs), Task 2.4 (Settings APIs)
 
-- Clerk-powered sign-in and sign-up pages using `<SignIn />` and `<SignUp />` components.
+#### Verification Steps
 
-#### [NEW] `apps/web/src/app/(auth)/onboarding/page.tsx`
+1. Access `http://localhost:3000/onboarding`. Check step progress updates as you click Next.
+2. Fill out Step 1; verify backend receives `POST /businesses` with correct payloads.
+3. Reload page; confirm UI correctly restores the active onboarding step based on `GET /onboarding/status`.
 
-- Multi-step business onboarding form (business name, industry, team size).
-- Calls `POST /api/v1/onboarding/start` then `PATCH /api/v1/onboarding/profile`.
+#### Acceptance Criteria
+
+- No AI chat interview components are loaded yet (placeholder screens only).
+- Form inputs validate formatting (email format, required fields) client-side before dispatching API requests.
+- The onboarding wizard is protected and accessible only to authenticated users who do not have an active onboarding business profile.
+
+#### Estimated Time
+
+6 hours
+
+#### Expected Git Commit Message
+
+`feat(web): build multi-step business onboarding wizard skeleton`
+
+---
+
+### Task 2.7 — Dashboard Shell
+
+#### Purpose
+
+Design the responsive React dashboard shell featuring layout navigation elements, headers, sidebar hooks, user profile dropdowns, and tenant context controls.
+
+#### Deliverables
+
+- **Component Setup**: Install base shadcn/ui primitives (`Button`, `Card`, `Input`, `Label`, `Avatar`, `Badge`, `DropdownMenu`, `Sidebar`, `Separator`) in `apps/web`.
+- **Dashboard Layout Wrapper**: `apps/web/src/app/(dashboard)/layout.tsx`.
+- **Sidebar Component**: Collapsible sidebar with navigation routes: Dashboard, Leads, Workflows, Settings, Members.
+- **Header Component**: Active business profile selector (tenant switch dropdown), notification bell indicator (static), user profile settings action, logout controller.
+- **Static Widgets Shell**: `apps/web/src/app/(dashboard)/page.tsx` displaying empty KPI overview widgets (Leads counter, active workflows list, pending approvals counter) with skeleton loaders.
+
+#### Dependencies
+
+- Task 2.1 (Clerk Auth Setup)
+
+#### Verification Steps
+
+1. Navigate to `/dashboard` and check layout styling on Desktop (sidebar visible) vs. Mobile (sidebar collapsed into drawer).
+2. Click menu links; verify matching paths load inside the dashboard viewport shell.
+3. Trigger tenant switch in the header dropdown; confirm session context values refresh.
+
+#### Acceptance Criteria
+
+- No actual leads, workflows, or real-time webhooks data should be populated (skeleton placeholders only).
+- Layout handles screen resizing cleanly without breaking grid structures (responsive CSS).
+- Interactivity utilizes smooth CSS micro-animations.
+
+#### Estimated Time
+
+6 hours
+
+#### Expected Git Commit Message
+
+`feat(web): implement dashboard layout shell with responsive sidebar`
+
+---
+
+### Task 2.8 — Sprint Verification
+
+#### Purpose
+
+Conduct end-to-end regression checks across all Sprint 2 tasks, ensuring auth guards, multi-tenant middleware, business endpoints, database tables, and the Next.js shell integrate without regression.
+
+#### Deliverables
+
+- **Prisma Migration Verification**: Assert all migration actions apply cleanly.
+- **Comprehensive Workspace Verification Checklist**: Check off all tasks against the Sprint Definition of Done.
+- **Documentation Update**: Update `walkthrough.md` with verification reports.
+
+#### Dependencies
+
+- Tasks 2.1 to 2.7
+
+#### Verification Steps
+
+1. Run `pnpm exec prisma migrate status` - verify database state is up to date.
+2. Spin up all containers and development servers locally.
+3. Complete onboarding signup from a clean browser session, create a business, adjust settings, and inspect members list.
+4. Execute `pnpm exec turbo run build lint typecheck` and verify zero compiler or linting exceptions across all workspaces.
+
+#### Acceptance Criteria
+
+- The Next.js dashboard shell connects to the NestJS API under Clerk session security.
+- Outbound responses follow standard envelope structures.
+- All Docker databases and cache servers remain healthy.
+
+#### Estimated Time
+
+3 hours
+
+#### Expected Git Commit Message
+
+`test(repo): verify sprint 2 integration and build pipeline`
 
 ---
 
 ## Verification Plan
 
-### Automated Checks
+### Automated Tests
 
-- `pnpm exec turbo run build lint typecheck` must pass across all 9 workspaces.
-- `pnpm exec prisma migrate status` must show all migrations applied.
+- Build verification:
+  ```bash
+  pnpm install
+  pnpm exec turbo run build lint typecheck
+  ```
+- Database migration alignment:
+  ```bash
+  pnpm exec prisma migrate status
+  ```
+- Unit/E2E test suite check:
+  ```bash
+  pnpm --filter api run test
+  ```
 
 ### Manual Verification
 
-1. Start Docker services: `docker compose up -d`.
-2. Start NestJS API: `pnpm --filter api run start:dev`.
-3. Start Next.js: `pnpm --filter web run dev`.
-4. Sign up via Clerk on `http://localhost:3000`.
-5. Verify `GET /api/v1/auth/me` returns correct user + tenant context.
-6. Verify dashboard shell renders with navigation sidebar.
-7. Verify `GET /health` still returns HTTP 200.
+1. Launch docker database containers (`docker compose up -d`).
+2. Boot NestJS core: `pnpm --filter api run start:dev`.
+3. Boot Next.js dashboard: `pnpm --filter web run dev`.
+4. Walk through user sign-up, business configuration setup, settings updates, member list view, and dashboard navigation. Confirm HTTP headers, request isolation, and styling boundaries.
