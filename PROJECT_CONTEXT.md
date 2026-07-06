@@ -59,7 +59,7 @@ The following documents represent the project's source of truth. Refer to this i
 
 ## 3. Current Project Status
 
-We have completed the architectural documentation and are preparing to begin the foundation setup.
+Sprint 0 and Sprint 1 are complete. Sprint 2 is the active development sprint.
 
 ```text
 +---------------------------------------------------------+
@@ -67,18 +67,53 @@ We have completed the architectural documentation and are preparing to begin the
 +---------------------------------------------------------+
 |  ✅ Architecture & Specs Complete                       |
 |  ✅ Database Schema Documented                          |
-|  ✅ Tool Registry Specifications Validated               |
+|  ✅ Tool Registry Specifications Validated              |
 |  ✅ API & Prompts Contracts Confirmed                   |
 |  ✅ Sprint Roadmap Approved                             |
 +---------------------------------------------------------+
-|  Status: Sprint 0 Done | Current Goal: Setup Monorepo   |
+|  Status: ✅ COMPLETE                                    |
++---------------------------------------------------------+
+
++---------------------------------------------------------+
+|                    Sprint 1 Dashboard                   |
++---------------------------------------------------------+
+|  ✅ pnpm + Turborepo monorepo initialized               |
+|  ✅ NestJS backend scaffolded (apps/api)                |
+|  ✅ Next.js 15 frontend scaffolded (apps/web)           |
+|  ✅ Workspace packages created (shared, ui, ai,         |
+|     workflow-engine, integrations, config)              |
+|  ✅ Docker Compose (PostgreSQL 15 + Redis 7)            |
+|  ✅ Prisma ORM + migration workflow configured          |
+|  ✅ ESLint, Prettier, Husky, commitlint configured      |
+|  ✅ GitHub Actions CI pipeline configured               |
+|  ✅ GET /health endpoint verified                       |
+|  ✅ All 16 Turbo tasks pass (build, lint, typecheck)    |
+|  ✅ Git tagged: v0.1.0 / sprint-1-complete              |
++---------------------------------------------------------+
+|  Status: ✅ COMPLETE  |  Version: v0.1.0                |
++---------------------------------------------------------+
+
++---------------------------------------------------------+
+|                    Sprint 2 Dashboard                   |
++---------------------------------------------------------+
+|  ⬜ Clerk Authentication & JWT Guard                   |
+|  ⬜ Tenant Context Middleware                           |
+|  ⬜ Business Creation & Onboarding Flow                 |
+|  ⬜ Business Profile & Settings API                    |
+|  ⬜ Employee & Role Management                         |
+|  ⬜ Auth Module (/auth/me, /auth/profile)               |
+|  ⬜ Next.js Dashboard Shell                             |
+|  ⬜ Sign-in / Sign-up pages (Clerk)                    |
+|  ⬜ Onboarding Form UI                                  |
++---------------------------------------------------------+
+|  Status: 🚀 ACTIVE  |  Target Version: v0.2.0          |
 +---------------------------------------------------------+
 ```
 
-- **Current Phase**: Phase 1 - Foundation Setup
-- **Current Sprint**: Sprint 1 - Core Workspace Setup
-- **Current Goal**: Initialize Turborepo, install dependencies, set up DB connections, and verify docker configurations.
-- **Next Milestone**: Authentication and Dashboard layout shell (Sprint 2).
+- **Current Phase**: Phase 2 - Database Schema & Auth Core
+- **Current Sprint**: Sprint 2 - Business Foundation
+- **Current Goal**: Implement Clerk authentication, tenant context middleware, business management APIs, and the Next.js dashboard shell.
+- **Next Milestone**: CRM Lead & Property management (Sprint 3).
 
 ---
 
@@ -245,13 +280,16 @@ Below is a summary of the next development sprints (refer to [ROADMAP.md:L50](fi
 
 ### Workspace Setup
 
-- [ ] Initialize Turborepo Monorepo (Sprint 1)
-- [ ] Configure `apps/api` (NestJS) and `apps/web` (Next.js) (Sprint 1)
-- [ ] Configure database connections & migration rules (Sprint 1)
+- [x] Initialize Turborepo Monorepo (Sprint 1)
+- [x] Configure `apps/api` (NestJS) and `apps/web` (Next.js) (Sprint 1)
+- [x] Configure database connections & migration rules (Sprint 1)
 
 ### Feature Implementations
 
 - [ ] Implement Clerk Auth & Tenant Context Middleware (Sprint 2)
+- [ ] Implement Business Profile, Settings & Members API (Sprint 2)
+- [ ] Implement Business Onboarding Flow (Sprint 2)
+- [ ] Implement Next.js Dashboard Shell (Sprint 2)
 - [ ] Implement CRM (Leads & Properties modules) (Sprint 3)
 - [ ] Implement Workflow Engine step processing & approval logic (Sprint 4)
 - [ ] Integrate onboarding conversational paths and prompt parser (Sprint 5)
