@@ -26,6 +26,7 @@
   "engines": {
     "node": ">=22.13.0 <24"
   },
+  "packageManager": "pnpm@9.15.5",
   "dependencies": {
     "@prisma/client": "6.19.3"
   }
