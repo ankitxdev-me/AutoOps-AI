@@ -59,3 +59,14 @@ Update docs when changing:
 - AI prompts
 - Security assumptions
 - Demo flow
+
+## Workflow Implementation Guidelines
+
+When adding or updating workflow components:
+
+1. **DTO Validations**: Implement class-validator annotations on request DTOs. For programmatic controller validation checks, always support plain JavaScript inputs inside static `validate` functions by instantiating the class using `Object.assign(new DtoClass(), plainObject)` before calling `validateSync()`.
+2. **Deterministic Validation**: Keep the `WorkflowDefinitionValidator` completely stateless and independent of database or network calls.
+3. **Optimistic Locking**: Every mutation API request must contain the current expected `revision` counter, checking it against the current database state before modifying parent records.
+4. **Tenant Scoping**: All database reads, writes, and soft deletion flags must explicitly specify `tenantId`. Never run unscoped operations.
+5. **Cascading Relational Writes**: Wrap projection generation (triggers, steps, variables) and parent workflow updates inside a database transaction (`prisma.$transaction`) to ensure atomic execution.
+6. **Immutable Published Versions**: Once a version's status shifts to `PUBLISHED`, its definition must remain frozen. Further configuration changes must initialize the next incremented version draft.

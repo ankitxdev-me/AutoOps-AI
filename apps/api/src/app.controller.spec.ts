@@ -53,16 +53,21 @@ describe('AppController', () => {
       };
 
       // Mock prisma calls
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const prisma = mockPrismaService as any;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       prisma.businessProfile = {
         findUnique: jest.fn().mockResolvedValue(mockProfile),
       };
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       prisma.businessSettings = {
         findUnique: jest.fn().mockResolvedValue(mockSettings),
       };
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       prisma.employee = {
         count: jest.fn().mockResolvedValue(3),
       };
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       prisma.invitation = {
         count: jest.fn().mockResolvedValue(2),
       };

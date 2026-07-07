@@ -1055,6 +1055,410 @@ Converts natural language description into standard Workflow step JSON.
 }
 ```
 
+````
+
+---
+
+### POST /workflows
+
+Manually creates a new workflow and initializes its first version draft inside a database transaction.
+
+#### Authentication
+Bearer Token (Clerk JWT)
+
+#### Authorization
+OWNER, ADMIN roles only (MEMBER access rejected with `403 Forbidden`)
+
+#### Request Body
+```json
+{
+  "name": "High Value Lead Assignment",
+  "key": "high-value-lead-assignment",
+  "description": "Assign high-value leads and send WhatsApp confirmations.",
+  "category": "sales",
+  "definition": {
+    "trigger": {
+      "type": "LEAD_CREATED"
+    },
+    "conditions": [
+      {
+        "field": "lead.budget",
+        "operator": "gte",
+        "value": 10000000
+      }
+    ],
+    "actions": [
+      {
+        "id": "assign-lead-rohit",
+        "name": "Assign to Rohit Kumar",
+        "type": "TOOL_CALL",
+        "configuration": {
+          "leadId": "{{lead.id}}",
+          "employeeId": "emp_02"
+        },
+        "sortOrder": 1
+      }
+    ],
+    "variables": [
+      {
+        "key": "lead.id",
+        "type": "STRING"
+      }
+    ],
+    "fallback": {}
+  },
+  "metadata": {}
+}
+````
+
+#### Response Example (`201 Created`)
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "wfl_01a2b3c4d5",
+    "tenantId": "tnt_987654321",
+    "key": "high-value-lead-assignment",
+    "name": "High Value Lead Assignment",
+    "description": "Assign high-value leads and send WhatsApp confirmations.",
+    "category": "sales",
+    "status": "DRAFT",
+    "createdBy": "usr_123456",
+    "activeVersionId": null,
+    "revision": 1,
+    "createdAt": "2026-07-07T12:00:00.000Z",
+    "updatedAt": "2026-07-07T12:00:00.000Z",
+    "deletedAt": null,
+    "versions": [
+      {
+        "id": "ver_01a2b3c4d5",
+        "workflowId": "wfl_01a2b3c4d5",
+        "versionNumber": 1,
+        "definitionVersion": 1,
+        "status": "DRAFT",
+        "createdById": "usr_123456"
+      }
+    ]
+  }
+}
+```
+
+#### Error Codes
+
+- `400 BadRequestException`: Missing required fields (e.g. key slug length under 3 characters).
+- `409 ConflictException`: A workflow with this unique key slug identifier already exists.
+
+---
+
+### GET /workflows
+
+Lists active workflow definitions belonging to the active tenant context. Supports cursor pagination.
+
+#### Authentication
+
+Bearer Token (Clerk JWT)
+
+#### Authorization
+
+OWNER, ADMIN, MEMBER roles
+
+#### Query Parameters
+
+- `limit` (optional): Integer (default 20, max 100).
+- `cursor` (optional): String (workflow ID paging marker).
+
+#### Response Example (`200 OK`)
+
+```json
+{
+  "success": true,
+  "data": {
+    "workflows": [
+      {
+        "id": "wfl_01a2b3c4d5",
+        "name": "High Value Lead Assignment",
+        "key": "high-value-lead-assignment",
+        "status": "ACTIVE",
+        "revision": 2,
+        "activeVersion": {
+          "id": "ver_01a2b3c4d5",
+          "versionNumber": 1
+        }
+      }
+    ],
+    "nextCursor": null
+  }
+}
+```
+
+---
+
+### GET /workflows/:id
+
+Retrieves full workflow configuration, including complete version logs ordered from newest to oldest.
+
+#### Authentication
+
+Bearer Token (Clerk JWT)
+
+#### Authorization
+
+OWNER, ADMIN, MEMBER roles
+
+#### Response Example (`200 OK`)
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "wfl_01a2b3c4d5",
+    "tenantId": "tnt_987654321",
+    "key": "high-value-lead-assignment",
+    "name": "High Value Lead Assignment",
+    "status": "ACTIVE",
+    "revision": 2,
+    "activeVersionId": "ver_01a2b3c4d5",
+    "versions": [
+      {
+        "id": "ver_01a2b3c4d6",
+        "versionNumber": 2,
+        "status": "DRAFT"
+      },
+      {
+        "id": "ver_01a2b3c4d5",
+        "versionNumber": 1,
+        "status": "PUBLISHED"
+      }
+    ]
+  }
+}
+```
+
+#### Error Codes
+
+- `404 NotFoundException`: Target workflow not found or belongs to another tenant.
+
+---
+
+### PATCH /workflows/:id
+
+Updates workflow details or edits the current draft version definition.
+
+#### Authentication
+
+Bearer Token (Clerk JWT)
+
+#### Authorization
+
+OWNER, ADMIN roles only
+
+#### Request Body
+
+```json
+{
+  "name": "Updated Lead Assignment Name",
+  "revision": 1
+}
+```
+
+#### Response Example (`200 OK`)
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "wfl_01a2b3c4d5",
+    "name": "Updated Lead Assignment Name",
+    "revision": 2
+  }
+}
+```
+
+#### Error Codes
+
+- `400 BadRequestException`: Triggered if trying to edit definition changes while the latest version is already frozen/published.
+- `409 ConflictException`: Revision conflict. The revision parameter does not match the current database value.
+
+---
+
+### DELETE /workflows/:id
+
+Soft deletes a workflow. The deleted record is removed from active GET lists.
+
+#### Authentication
+
+Bearer Token (Clerk JWT)
+
+#### Authorization
+
+OWNER, ADMIN roles only
+
+#### Response Example (`200 OK`)
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "wfl_01a2b3c4d5",
+    "deletedAt": "2026-07-07T12:30:00.000Z"
+  }
+}
+```
+
+---
+
+### POST /workflows/:id/publish
+
+Idempotently freezes the current draft version status, builds trigger/step/variable projections, sets it as active, and initializes the next version draft.
+
+#### Authentication
+
+Bearer Token (Clerk JWT)
+
+#### Authorization
+
+OWNER, ADMIN roles only
+
+#### Request Body
+
+```json
+{
+  "revision": 2
+}
+```
+
+#### Response Example (`200 OK`)
+
+```json
+{
+  "success": true,
+  "data": {
+    "workflow": {
+      "id": "wfl_01a2b3c4d5",
+      "status": "ACTIVE",
+      "activeVersionId": "ver_01a2b3c4d5",
+      "revision": 3
+    },
+    "version": {
+      "id": "ver_01a2b3c4d5",
+      "versionNumber": 1,
+      "status": "PUBLISHED"
+    }
+  }
+}
+```
+
+#### Error Codes
+
+- `400 BadRequestException`: Workflow definition validator parsing fails (e.g., duplicate step ID, invalid trigger event type).
+- `409 ConflictException`: Revision conflict.
+
+---
+
+### POST /workflows/:id/pause
+
+Suspends workflow trigger event matching.
+
+#### Authentication
+
+Bearer Token (Clerk JWT)
+
+#### Authorization
+
+OWNER, ADMIN roles only
+
+#### Request Body
+
+```json
+{
+  "revision": 3
+}
+```
+
+#### Response Example (`200 OK`)
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "wfl_01a2b3c4d5",
+    "status": "PAUSED",
+    "revision": 4
+  }
+}
+```
+
+---
+
+### POST /workflows/:id/resume
+
+Re-enables paused workflow matching.
+
+#### Authentication
+
+Bearer Token (Clerk JWT)
+
+#### Authorization
+
+OWNER, ADMIN roles only
+
+#### Request Body
+
+```json
+{
+  "revision": 4
+}
+```
+
+#### Response Example (`200 OK`)
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "wfl_01a2b3c4d5",
+    "status": "ACTIVE",
+    "revision": 5
+  }
+}
+```
+
+---
+
+### POST /workflows/:id/archive
+
+Archives the workflow and moves all associated version statuses to `ARCHIVED`. This is a terminal state.
+
+#### Authentication
+
+Bearer Token (Clerk JWT)
+
+#### Authorization
+
+OWNER, ADMIN roles only
+
+#### Request Body
+
+```json
+{
+  "revision": 5
+}
+```
+
+#### Response Example (`200 OK`)
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "wfl_01a2b3c4d5",
+    "status": "ARCHIVED",
+    "revision": 6
+  }
+}
+```
+
 ---
 
 ### POST /workflows/:id/execute

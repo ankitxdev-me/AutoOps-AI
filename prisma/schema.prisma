@@ -30,6 +30,7 @@ model Tenant {
   profile        BusinessProfile?
   settings       BusinessSettings?
   invitations    Invitation[]
+  workflows      Workflow[]        @relation("TenantToWorkflows")
 }
 
 model User {
@@ -42,7 +43,9 @@ model User {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
-  employees Employee[]
+  employees        Employee[]
+  workflowsCreated Workflow[]        @relation("UserToWorkflows")
+  versionsCreated  WorkflowVersion[] @relation("UserToWorkflowVersions")
 }
 
 enum EmployeeRole {
@@ -128,4 +131,136 @@ model Invitation {
 
   @@unique([tenantId, email])
 }
+
+enum WorkflowStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum WorkflowVersionStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum WorkflowTriggerType {
+  LEAD_CREATED
+  LEAD_UPDATED
+  VOICE_CALL_COMPLETED
+  CALENDAR_EVENT_CREATED
+  TASK_COMPLETED
+  MANUAL_RUN
+}
+
+enum WorkflowVariableType {
+  STRING
+  NUMBER
+  BOOLEAN
+  JSON
+}
+
+enum WorkflowStepType {
+  CONDITION
+  TOOL_CALL
+  APPROVAL
+  WAIT
+  BRANCH
+  FALLBACK
+}
+
+model Workflow {
+  id              String            @id @default(uuid())
+  tenantId        String
+  key             String            @unique // Unique immutable slug-like identifier
+  name            String
+  description     String?
+  category        String?           // Category grouping (CRM, Sales, HR, etc.)
+  status          WorkflowStatus    @default(DRAFT)
+  activeVersionId String?           @unique
+  createdBy       String
+  revision        Int               @default(1) // Optimistic locking
+  metadata        Json?             // Future extensibility metadata (AI tags, source, etc.)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  deletedAt       DateTime?
+
+  tenant          Tenant            @relation("TenantToWorkflows", fields: [tenantId], references: [id], onDelete: Cascade)
+  createdByUser   User              @relation("UserToWorkflows", fields: [createdBy], references: [id], onDelete: Restrict)
+  versions        WorkflowVersion[] @relation("WorkflowToVersions")
+  activeVersion   WorkflowVersion?  @relation("WorkflowToActiveVersion", fields: [activeVersionId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([createdBy])
+}
+
+model WorkflowVersion {
+  id                String                @id @default(uuid())
+  workflowId        String
+  versionNumber     Int
+  definitionVersion Int                   @default(1) // For JSON schema schema evolution
+  status            WorkflowVersionStatus @default(DRAFT)
+  definition        Json                  // The canonical definition JSON (Single source of truth)
+  createdById       String
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  workflow          Workflow              @relation("WorkflowToVersions", fields: [workflowId], references: [id], onDelete: Cascade)
+  activeFor         Workflow?             @relation("WorkflowToActiveVersion")
+  createdByUser     User                  @relation("UserToWorkflowVersions", fields: [createdById], references: [id], onDelete: Restrict)
+  steps             WorkflowStep[]
+  triggers          WorkflowTrigger[]
+  variables         WorkflowVariable[]
+
+  @@unique([workflowId, versionNumber])
+  @@index([workflowId])
+  @@index([createdById])
+}
+
+model WorkflowStep {
+  id                String          @id @default(uuid())
+  workflowVersionId String
+  sequence          Int
+  sortOrder         Int             // Order mapping for UI drag and drop
+  type              WorkflowStepType
+  name              String
+  displayName       String          // Display helper label for UI
+  metadata          Json            @default("{}")
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  workflowVersion   WorkflowVersion @relation(fields: [workflowVersionId], references: [id], onDelete: Cascade)
+
+  @@index([workflowVersionId])
+}
+
+model WorkflowTrigger {
+  id                String              @id @default(uuid())
+  workflowVersionId String
+  triggerType       WorkflowTriggerType
+  configuration     Json                @default("{}") 
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  workflowVersion   WorkflowVersion     @relation(fields: [workflowVersionId], references: [id], onDelete: Cascade)
+
+  @@index([workflowVersionId])
+}
+
+model WorkflowVariable {
+  id                String               @id @default(uuid())
+  workflowVersionId String
+  key               String
+  type              WorkflowVariableType
+  defaultValue      Json?                // Stores string, number, boolean, array, object values
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  workflowVersion   WorkflowVersion      @relation(fields: [workflowVersionId], references: [id], onDelete: Cascade)
+
+  @@unique([workflowVersionId, key])
+  @@index([workflowVersionId])
+}
+
 

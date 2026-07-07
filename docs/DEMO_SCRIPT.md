@@ -147,3 +147,50 @@ This is the finalized walkthrough for showcasing the Sprint 2 milestone:
 2. Observe live statistics: **Total Active Members**, **Pending Invites**, **Business Created Date**, **Business Name**, and **Industry** populated dynamically from server data.
 3. Observe future sprint targets (Running Workflows, AI Agents) default to `0`.
 4. Monitor the dynamic **Recent Workspace Activity Feed** updating in real time as profile updates, settings modifications, invites, role transitions, or removals occur.
+
+---
+
+## Sprint 3.1 Demo Flow: Workflow Foundation
+
+This script showcases the creation, versioning, validation, and lifecycle management APIs completed in Sprint 3.1:
+
+### Step 1: Create a Workflow
+
+1. Call `POST /workflows` passing a new workflow key, name, and description.
+2. The system executes a database transaction to:
+   - Create the parent `Workflow` record (revision: `1`, status: `DRAFT`).
+   - Create the first `WorkflowVersion` draft record (versionNumber: `1`, status: `DRAFT`).
+3. Verify that the parent workflow and version history are initialized correctly.
+
+### Step 2: Edit the Draft Definition
+
+1. Call `PATCH /workflows/:id` with a `definition` JSON payload and the current `revision` (value: `1`).
+2. The definition contains triggers, actions, and fallback blocks.
+3. The system checks the revision (concurrency control) and updates the draft version definition. The parent workflow revision increments to `2`.
+
+### Step 3: Trigger-Based Publication
+
+1. Call `POST /workflows/:id/publish` with the current `revision` (value: `2`).
+2. The system executes the `WorkflowDefinitionValidator` to check for trigger type compliance, unique action IDs, valid operators, and cross-references.
+3. Once validated, a Prisma database transaction:
+   - Freezes `WorkflowVersion` 1 status to `PUBLISHED`.
+   - Parses the JSON definition and projects database records for trigger indexing (`WorkflowTrigger`), steps sequencing (`WorkflowStep`), and placeholder variables (`WorkflowVariable`).
+   - Activates the workflow: sets status to `ACTIVE` and links `activeVersionId` to version 1.
+   - Automatically initializes the next draft `WorkflowVersion` 2 with versionNumber `2` and status `DRAFT` for future changes.
+
+### Step 4: Pause and Resume
+
+1. Call `POST /workflows/:id/pause` with the current `revision` (value: `3`). The workflow status shifts to `PAUSED`.
+2. Call `POST /workflows/:id/resume` with the current `revision` (value: `4`). The status returns to `ACTIVE`.
+
+### Step 5: Archiving and Terminal States
+
+1. Call `POST /workflows/:id/archive` with the current `revision` (value: `5`).
+2. The system moves the workflow status to `ARCHIVED` and bulk-updates all associated version draft states to `ARCHIVED`.
+3. Try calling any modification API (e.g. Pause, Update) on this archived workflow. Verify that the transition is rejected with `BadRequestException` as archived states are terminal.
+
+### What is Intentionally Out of Scope for Sprint 3.1
+
+- **Event Dispatching & Execution**: Auto-matching inbound CRM events (like `lead.created`) to workflows and runner-step execution belongs to **Sprint 3.2**.
+- **Visual Graph Builder**: The drag-and-drop workflow graph editing canvas on the Next.js frontend belongs to **Sprint 4**.
+- **AI Parser Conversational Node**: Generating definition JSONs through real-time Gemini prompts belongs to **Sprint 5**.

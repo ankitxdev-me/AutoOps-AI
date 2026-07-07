@@ -104,7 +104,7 @@ We use an incremental development strategy to ensure architectural stability, re
 - **Risks**: Incorrect tenant context resolution could leak data across organizations.
 - **Success Criteria**: Users can log in, switch tenants, and view the dashboard shell.
 
-### Sprint 3: Lead Management, Property Management & CRM
+### Sprint 3: Lead Management, Property Management & CRM [STATUS: COMPLETED]
 
 - **Objectives**: Build the core operational CRM entities.
 - **Deliverables**:
@@ -115,7 +115,17 @@ We use an incremental development strategy to ensure architectural stability, re
 - **Risks**: Vague property definitions could make it difficult to support other industries later.
 - **Success Criteria**: Leads and properties can be created, updated, and listed on the dashboard.
 
-### Sprint 4: Workflow Engine & Builder
+### Sprint 3.1: Workflow Foundation [STATUS: COMPLETED]
+
+- **Objectives**: Establish database schemas, validation layers, lifecycle APIs, and integration testing frameworks for workflows.
+- **Deliverables**:
+  - Prisma models: initialized `Workflow`, `WorkflowVersion`, `WorkflowStep`, `WorkflowTrigger`, and `WorkflowVariable` tables.
+  - Validation: built out reusable, stateless `WorkflowDefinitionValidator` for validation.
+  - REST endpoints: implemented `/workflows` lifecycle endpoints with transactional query bindings.
+  - Hardening: covered CRUD, states, locks, and roles inside Jest test suites.
+- **Success Criteria**: 100% clean builds, all Jest unit/integration specs passing successfully.
+
+### Sprint 3.2: Workflow Execution Engine [STATUS: PLANNED]
 
 - **Objectives**: Build the custom deterministic Workflow Engine.
 - **Deliverables**:
@@ -123,7 +133,7 @@ We use an incremental development strategy to ensure architectural stability, re
   - Step Runner: processes step configurations, handles retries, and evaluates conditions.
   - Approval queue: pauses workflows for manual user confirmation.
   - Real-time updates: Socket.IO events for live dashboard tracking.
-- **Dependencies**: Sprint 3.
+- **Dependencies**: Sprint 3.1.
 - **Risks**: Long-running or infinite loops in nested workflow conditions.
 - **Success Criteria**: The engine can execute a test JSON workflow (e.g. log actions, check budget condition, trigger fallback) and emit status updates.
 
