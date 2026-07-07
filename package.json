@@ -9,7 +9,9 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "prepare": "husky"
+    "prepare": "husky",
+    "build:api": "pnpm exec prisma generate && pnpm --filter api build",
+    "start:api": "node apps/api/dist/main.js"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.1",
