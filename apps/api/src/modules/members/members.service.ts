@@ -145,4 +145,132 @@ export class MembersService {
       orderBy: { createdAt: 'desc' },
     });
   }
+
+  async updateMemberRole(
+    tenantId: string,
+    callerRole: string,
+    callerUserId: string,
+    employeeId: string,
+    newRole: EmployeeRole,
+  ) {
+    if (callerRole !== 'OWNER') {
+      throw new ForbiddenException('Only the OWNER can change member roles.');
+    }
+
+    const targetEmployee = await this.prisma.employee.findUnique({
+      where: { id: employeeId },
+    });
+
+    if (!targetEmployee || targetEmployee.tenantId !== tenantId) {
+      throw new BadRequestException('Member not found in this business.');
+    }
+
+    if (targetEmployee.role === 'OWNER') {
+      throw new BadRequestException('OWNER role cannot be changed.');
+    }
+
+    if (newRole === 'OWNER') {
+      throw new BadRequestException('Cannot change role to OWNER.');
+    }
+
+    return this.prisma.employee.update({
+      where: { id: employeeId },
+      data: { role: newRole },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
+  }
+
+  async removeMember(
+    tenantId: string,
+    callerRole: string,
+    callerUserId: string,
+    employeeId: string,
+  ) {
+    if (callerRole !== 'OWNER') {
+      throw new ForbiddenException('Only the OWNER can remove members.');
+    }
+
+    const targetEmployee = await this.prisma.employee.findUnique({
+      where: { id: employeeId },
+    });
+
+    if (!targetEmployee || targetEmployee.tenantId !== tenantId) {
+      throw new BadRequestException('Member not found in this business.');
+    }
+
+    if (targetEmployee.role === 'OWNER') {
+      throw new BadRequestException('OWNER cannot be removed.');
+    }
+
+    if (targetEmployee.userId === callerUserId) {
+      throw new BadRequestException(
+        'You cannot remove yourself from the business.',
+      );
+    }
+
+    return this.prisma.employee.delete({
+      where: { id: employeeId },
+    });
+  }
+
+  async cancelInvitation(
+    tenantId: string,
+    callerRole: string,
+    invitationId: string,
+  ) {
+    if (callerRole !== 'OWNER' && callerRole !== 'ADMIN') {
+      throw new ForbiddenException(
+        'Only OWNER or ADMIN can cancel invitations.',
+      );
+    }
+
+    const invitation = await this.prisma.invitation.findUnique({
+      where: { id: invitationId },
+    });
+
+    if (!invitation || invitation.tenantId !== tenantId) {
+      throw new BadRequestException('Invitation not found in this business.');
+    }
+
+    return this.prisma.invitation.delete({
+      where: { id: invitationId },
+    });
+  }
+
+  async resendInvitation(
+    tenantId: string,
+    callerRole: string,
+    invitationId: string,
+  ) {
+    if (callerRole !== 'OWNER' && callerRole !== 'ADMIN') {
+      throw new ForbiddenException(
+        'Only OWNER or ADMIN can resend invitations.',
+      );
+    }
+
+    const invitation = await this.prisma.invitation.findUnique({
+      where: { id: invitationId },
+    });
+
+    if (!invitation || invitation.tenantId !== tenantId) {
+      throw new BadRequestException('Invitation not found in this business.');
+    }
+
+    return this.prisma.invitation.update({
+      where: { id: invitationId },
+      data: {
+        updatedAt: new Date(),
+      },
+    });
+  }
 }

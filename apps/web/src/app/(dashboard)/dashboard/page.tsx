@@ -5,61 +5,174 @@ import Link from 'next/link';
 import { useAuth } from '@clerk/nextjs';
 import { fetchWithAuth } from '../../../lib/api';
 
-interface DashboardStats {
-  legalBusinessName: string;
-  memberCount: number;
-  onboardingStep: string;
+interface BusinessSummary {
+  business: {
+    id: string;
+    name: string;
+    industry: string;
+    createdAt: string;
+    profile: {
+      createdAt: string;
+      updatedAt: string;
+    } | null;
+    settings: {
+      createdAt: string;
+      updatedAt: string;
+    } | null;
+  } | null;
+  members: {
+    activeCount: number;
+    pendingCount: number;
+  };
+  workflows: number;
+  agents: number;
 }
 
-interface OnboardingStatus {
-  onboardingStep: string;
-  completionPercentage: number;
-  isCompleted: boolean;
-}
-
-interface MembersPage {
-  items: unknown[];
-}
-
-interface BusinessProfile {
-  legalBusinessName: string;
+interface ActivityItem {
+  id: string;
+  type: string;
+  message: string;
+  timestamp: string;
+  icon: string;
+  iconBg: string;
+  iconColor: string;
 }
 
 export default function DashboardPage() {
   const { getToken, isLoaded } = useAuth();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [summary, setSummary] = useState<BusinessSummary | null>(null);
+  const [feed, setFeed] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadStats() {
+    async function loadDashboardData() {
       if (!isLoaded) return;
       try {
         const token = await getToken();
-        const [statusRes, profileRes, membersRes] = await Promise.all([
-          fetchWithAuth<OnboardingStatus>('/onboarding/status', token),
-          fetchWithAuth<BusinessProfile>('/businesses/active/profile', token),
-          fetchWithAuth<MembersPage>('/businesses/active/members', token),
-        ]);
+        const res = await fetchWithAuth<BusinessSummary>('/dashboard/summary', token);
 
-        setStats({
-          legalBusinessName: profileRes.success
-            ? profileRes.data.legalBusinessName
-            : 'Your Business',
-          memberCount: membersRes.success ? membersRes.data.items.length : 1,
-          onboardingStep: statusRes.success ? statusRes.data.onboardingStep : 'completed',
-        });
+        if (res.success && res.data) {
+          setSummary(res.data);
+
+          // Construct Dynamic Activity Feed (Task 8)
+          const activities: ActivityItem[] = [];
+
+          // 1. Business Created
+          if (res.data.business) {
+            activities.push({
+              id: 'biz-created',
+              type: 'system',
+              message: `Business "${res.data.business.name}" created`,
+              timestamp: res.data.business.createdAt || new Date().toISOString(),
+              icon: '🏢',
+              iconBg: 'bg-blue-500/10',
+              iconColor: 'text-blue-400',
+            });
+          }
+
+          // 2. Profile Updated
+          if (res.data.business?.profile) {
+            const profile = res.data.business.profile;
+            if (profile.updatedAt && profile.updatedAt !== profile.createdAt) {
+              activities.push({
+                id: 'profile-updated',
+                type: 'system',
+                message: 'Business profile updated',
+                timestamp: profile.updatedAt,
+                icon: '📝',
+                iconBg: 'bg-[#14B8A6]/10',
+                iconColor: 'text-[#14B8A6]',
+              });
+            }
+          }
+
+          // 3. Settings Updated
+          if (res.data.business?.settings) {
+            const settings = res.data.business.settings;
+            if (settings.updatedAt && settings.updatedAt !== settings.createdAt) {
+              activities.push({
+                id: 'settings-updated',
+                type: 'system',
+                message: 'Settings updated',
+                timestamp: settings.updatedAt,
+                icon: '⚙️',
+                iconBg: 'bg-purple-500/10',
+                iconColor: 'text-purple-400',
+              });
+            }
+          }
+
+          // 4. Load client side localStorage actions (like cancels, removes, resends, invites)
+          const localActions = JSON.parse(
+            localStorage.getItem(`activity_${res.data.business?.id}`) || '[]',
+          ) as Array<{
+            type: string;
+            email?: string;
+            name?: string;
+            oldRole?: string;
+            newRole?: string;
+            timestamp: string;
+          }>;
+
+          localActions.forEach((act, idx) => {
+            if (act.type === 'invite') {
+              activities.push({
+                id: `local-invite-${idx}`,
+                type: 'invite',
+                message: `Member invited: ${act.email}`,
+                timestamp: act.timestamp,
+                icon: '✉️',
+                iconBg: 'bg-amber-500/10',
+                iconColor: 'text-amber-400',
+              });
+            } else if (act.type === 'cancel_invite') {
+              activities.push({
+                id: `local-cancel-${idx}`,
+                type: 'cancel',
+                message: `Invitation to ${act.email} cancelled`,
+                timestamp: act.timestamp,
+                icon: '✕',
+                iconBg: 'bg-rose-500/10',
+                iconColor: 'text-rose-400',
+              });
+            } else if (act.type === 'remove_member') {
+              activities.push({
+                id: `local-remove-${idx}`,
+                type: 'remove',
+                message: `Member removed: ${act.name}`,
+                timestamp: act.timestamp,
+                icon: '👤',
+                iconBg: 'bg-rose-500/10',
+                iconColor: 'text-rose-400',
+              });
+            } else if (act.type === 'role_change') {
+              activities.push({
+                id: `local-role-${idx}`,
+                type: 'role',
+                message: `${act.name}'s role updated to ${act.newRole}`,
+                timestamp: act.timestamp,
+                icon: '⚡',
+                iconBg: 'bg-emerald-500/10',
+                iconColor: 'text-emerald-400',
+              });
+            }
+          });
+
+          // Sort activities newest first
+          activities.sort(
+            (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+          );
+          setFeed(activities);
+        }
       } catch {
-        // Fallback to defaults
-        setStats({
-          legalBusinessName: 'Your Business',
-          memberCount: 1,
-          onboardingStep: 'completed',
-        });
+        // Fallback to default state
+        setSummary(null);
+        setFeed([]);
       } finally {
         setLoading(false);
       }
     }
-    void loadStats();
+    void loadDashboardData();
   }, [isLoaded, getToken]);
 
   if (loading) {
@@ -76,6 +189,12 @@ export default function DashboardPage() {
     );
   }
 
+  const businessName = summary?.business?.name || 'Your Business';
+  const industry = summary?.business?.industry || 'Real Estate';
+  const createdDate = summary?.business?.createdAt
+    ? new Date(summary.business.createdAt).toLocaleDateString()
+    : 'N/A';
+
   return (
     <div className="space-y-8">
       {/* Welcome Card */}
@@ -85,7 +204,7 @@ export default function DashboardPage() {
             AutoOps Workspace
           </span>
           <h2 className="text-3xl font-extrabold text-slate-100 bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
-            Welcome to {stats?.legalBusinessName}
+            Welcome to {businessName}
           </h2>
           <p className="text-slate-400 text-sm max-w-lg leading-relaxed">
             Your multi-tenant business foundation is active. From here you can manage profile
@@ -96,42 +215,88 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-[#111827] border border-slate-800/60 rounded-2xl p-6 space-y-4 hover:border-blue-500/30 transition-all duration-300 shadow-md">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-[#94A3B8]">Team Size</span>
+            <span className="text-sm font-medium text-[#94A3B8]">Total Members</span>
             <span className="text-lg">👥</span>
           </div>
           <div className="space-y-1">
-            <h4 className="text-2xl font-bold text-slate-100">{stats?.memberCount || 1}</h4>
+            <h4 className="text-2xl font-bold text-slate-100">
+              {summary?.members.activeCount || 0}
+            </h4>
             <p className="text-xs text-[#94A3B8]/60">Active team members registered</p>
           </div>
         </div>
 
         <div className="bg-[#111827] border border-slate-800/60 rounded-2xl p-6 space-y-4 hover:border-blue-500/30 transition-all duration-300 shadow-md">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-[#94A3B8]">Business Profile</span>
-            <span className="text-lg">🏢</span>
+            <span className="text-sm font-medium text-[#94A3B8]">Pending Invites</span>
+            <span className="text-lg">✉️</span>
           </div>
           <div className="space-y-1">
-            <h4 className="text-2xl font-bold text-slate-100">Setup Mapped</h4>
-            <p className="text-xs text-[#94A3B8]/60">Active profile and localization initialized</p>
+            <h4 className="text-2xl font-bold text-slate-100">
+              {summary?.members.pendingCount || 0}
+            </h4>
+            <p className="text-xs text-[#94A3B8]/60">Awaiting user confirmation</p>
           </div>
         </div>
 
         <div className="bg-[#111827] border border-slate-800/60 rounded-2xl p-6 space-y-4 hover:border-blue-500/30 transition-all duration-300 shadow-md">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-[#94A3B8]">Onboarding Status</span>
-            <span className="text-lg">✅</span>
+            <span className="text-sm font-medium text-[#94A3B8]">Running Workflows</span>
+            <span className="text-lg">🔄</span>
           </div>
           <div className="space-y-1">
-            <h4 className="text-2xl font-bold text-slate-100">Finished</h4>
-            <p className="text-xs text-[#94A3B8]/60">All setup milestone requirements met</p>
+            <h4 className="text-2xl font-bold text-slate-100">0</h4>
+            <p className="text-xs text-[#94A3B8]/60">Sprint 3 Feature</p>
+          </div>
+        </div>
+
+        <div className="bg-[#111827] border border-slate-800/60 rounded-2xl p-6 space-y-4 hover:border-blue-500/30 transition-all duration-300 shadow-md">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-[#94A3B8]">AI Agents</span>
+            <span className="text-lg">🤖</span>
+          </div>
+          <div className="space-y-1">
+            <h4 className="text-2xl font-bold text-slate-100">0</h4>
+            <p className="text-xs text-[#94A3B8]/60">Sprint 4 Feature</p>
           </div>
         </div>
       </div>
 
-      {/* Quick Actions & Recent Activity Placeholder */}
+      {/* Business Metadata Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-[#111827] border border-slate-800/60 rounded-2xl p-6 hover:border-blue-500/30 transition-all duration-300 shadow-md flex items-center justify-between">
+          <div>
+            <p className="text-xs text-[#94A3B8] font-medium uppercase tracking-wider">
+              Business Name
+            </p>
+            <h5 className="text-sm font-bold text-slate-100 mt-1">{businessName}</h5>
+          </div>
+          <span className="text-xl">🏢</span>
+        </div>
+
+        <div className="bg-[#111827] border border-slate-800/60 rounded-2xl p-6 hover:border-blue-500/30 transition-all duration-300 shadow-md flex items-center justify-between">
+          <div>
+            <p className="text-xs text-[#94A3B8] font-medium uppercase tracking-wider">Industry</p>
+            <h5 className="text-sm font-bold text-slate-100 mt-1">{industry}</h5>
+          </div>
+          <span className="text-xl">🎯</span>
+        </div>
+
+        <div className="bg-[#111827] border border-slate-800/60 rounded-2xl p-6 hover:border-blue-500/30 transition-all duration-300 shadow-md flex items-center justify-between">
+          <div>
+            <p className="text-xs text-[#94A3B8] font-medium uppercase tracking-wider">
+              Created Date
+            </p>
+            <h5 className="text-sm font-bold text-slate-100 mt-1">{createdDate}</h5>
+          </div>
+          <span className="text-xl">📅</span>
+        </div>
+      </div>
+
+      {/* Quick Actions & Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Quick Actions */}
         <div className="bg-[#111827] border border-slate-800/60 rounded-2xl p-6 space-y-4 lg:col-span-1 shadow-md">
@@ -161,38 +326,35 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Recent Activity Placeholder */}
+        {/* Recent Activity */}
         <div className="bg-[#111827] border border-slate-800/60 rounded-2xl p-6 space-y-4 lg:col-span-2 shadow-md">
           <h3 className="text-sm font-semibold text-slate-355">Recent Workspace Activity</h3>
-          <div className="space-y-3">
-            <div className="flex items-start space-x-3 p-3 rounded-xl bg-slate-950/40 border border-slate-850/50">
-              <span className="text-xs p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400">
-                ⚡
-              </span>
-              <div>
-                <p className="text-xs font-semibold text-slate-300">
-                  Onboarding completed successfully
-                </p>
-                <p className="text-[10px] text-[#94A3B8]/60">Just now</p>
-              </div>
+
+          {feed.length === 0 ? (
+            <div className="py-8 flex flex-col items-center justify-center space-y-1">
+              <span className="text-2xl">⚡</span>
+              <p className="text-slate-400 text-xs">No business activity yet.</p>
             </div>
-            <div className="flex items-start space-x-3 p-3 rounded-xl bg-slate-950/40 border border-slate-850/50">
-              <span className="text-xs p-1.5 rounded-lg bg-violet-500/10 text-violet-400">👤</span>
-              <div>
-                <p className="text-xs font-semibold text-slate-300">Business settings configured</p>
-                <p className="text-[10px] text-[#94A3B8]/60">10 minutes ago</p>
-              </div>
+          ) : (
+            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+              {feed.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-start space-x-3 p-3 rounded-xl bg-slate-950/40 border border-slate-850/50"
+                >
+                  <span className={`text-xs p-1.5 rounded-lg ${item.iconBg} ${item.iconColor}`}>
+                    {item.icon}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-slate-300 truncate">{item.message}</p>
+                    <p className="text-[10px] text-[#94A3B8]/60 mt-0.5">
+                      {new Date(item.timestamp).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="flex items-start space-x-3 p-3 rounded-xl bg-slate-950/40 border border-slate-850/50">
-              <span className="text-xs p-1.5 rounded-lg bg-blue-500/10 text-blue-400">🏢</span>
-              <div>
-                <p className="text-xs font-semibold text-slate-300">
-                  Business Tenant shell initialized
-                </p>
-                <p className="text-[10px] text-[#94A3B8]/60">15 minutes ago</p>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

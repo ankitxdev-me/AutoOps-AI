@@ -6,6 +6,7 @@ import {
   Body,
   UseGuards,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { TenantContextGuard } from '../../common/guards/tenant-context.guard';
@@ -324,6 +325,9 @@ export class BusinessesController {
     @TenantContext() tenantContext: TenantContextPayload,
     @Body() body: UpdateBusinessProfileDto,
   ) {
+    if (tenantContext.role !== 'OWNER') {
+      throw new ForbiddenException('Only OWNER can edit the business profile.');
+    }
     UpdateBusinessProfileDto.validate(body);
     const updatedProfile = await this.businessesService.updateProfile(
       tenantContext.tenantId,
@@ -353,6 +357,9 @@ export class BusinessesController {
     @TenantContext() tenantContext: TenantContextPayload,
     @Body() body: UpdateBusinessSettingsDto,
   ) {
+    if (tenantContext.role !== 'OWNER') {
+      throw new ForbiddenException('Only OWNER can edit settings.');
+    }
     UpdateBusinessSettingsDto.validate(body);
     const updatedSettings = await this.businessesService.updateSettings(
       tenantContext.tenantId,

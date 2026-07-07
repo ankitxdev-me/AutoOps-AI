@@ -79,12 +79,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   ];
 
   // Breadcrumbs calculation
-  const pathSegments = pathname.split('/').filter(Boolean);
+  const pathSegments = (pathname || '').split('/').filter(Boolean);
   const breadcrumbs = [
     { name: 'Home', href: '/' },
     ...pathSegments.map((seg, idx) => {
       const href = '/' + pathSegments.slice(0, idx + 1).join('/');
-      const name = seg.charAt(0).toUpperCase() + seg.slice(1);
+      const name =
+        (seg && seg.length > 0 ? seg.charAt(0).toUpperCase() : '') + (seg ? seg.slice(1) : '');
       return { name, href };
     }),
   ];

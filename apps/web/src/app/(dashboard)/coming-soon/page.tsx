@@ -4,11 +4,11 @@ import React from 'react';
 import { usePathname } from 'next/navigation';
 
 export default function ComingSoonPage() {
-  const pathname = usePathname();
+  const pathname = usePathname() || '';
   const pageName = pathname
     .split('/')
     .filter(Boolean)
-    .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+    .map((s) => (s && s.length > 0 ? s.charAt(0).toUpperCase() + s.slice(1) : ''))
     .join(' ');
 
   return (

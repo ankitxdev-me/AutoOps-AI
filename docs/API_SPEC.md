@@ -404,6 +404,109 @@ Lists all employees registered in the current active business tenant.
 
 ---
 
+### GET /dashboard/summary
+
+Retrieves consolidated dashboard stats, including active business profile, settings configuration, and team member metrics.
+
+#### Response Example (`200 OK`)
+
+```json
+{
+  "success": true,
+  "data": {
+    "business": {
+      "id": "tnt_0918230912",
+      "name": "Aura Realty Group",
+      "industry": "Real Estate",
+      "createdAt": "2026-07-05T12:00:00.000Z",
+      "profile": {},
+      "settings": {}
+    },
+    "members": {
+      "activeCount": 2,
+      "pendingCount": 1
+    },
+    "workflows": 0,
+    "agents": 0
+  }
+}
+```
+
+---
+
+### PATCH /businesses/active/members/:id/role
+
+Allows the business OWNER to change roles between MEMBER and ADMIN.
+
+#### Request Body
+
+```json
+{
+  "role": "ADMIN"
+}
+```
+
+#### Response Example (`200 OK`)
+
+```json
+{
+  "success": true,
+  "message": "Member role updated successfully.",
+  "data": {
+    "id": "emp_02",
+    "role": "ADMIN",
+    "status": "active"
+  }
+}
+```
+
+---
+
+### DELETE /businesses/active/members/:id
+
+Allows the business OWNER to remove a member from the database.
+
+#### Response Example (`200 OK`)
+
+```json
+{
+  "success": true,
+  "message": "Member removed successfully."
+}
+```
+
+---
+
+### DELETE /businesses/active/members/invitations/:id
+
+Allows OWNER or ADMIN to cancel a pending invitation.
+
+#### Response Example (`200 OK`)
+
+```json
+{
+  "success": true,
+  "message": "Invitation cancelled successfully."
+}
+```
+
+---
+
+### POST /businesses/active/members/invitations/:id/resend
+
+Allows OWNER or ADMIN to resend a pending invitation, updating its timestamp in the database.
+
+#### Response Example (`200 OK`)
+
+```json
+{
+  "success": true,
+  "message": "Invitation resent successfully."
+}
+```
+
+---
+
 ## 4. Business Onboarding APIs
 
 The Business Onboarding flow maps how a business signs up, undergoes an AI onboarding interview to understand their setup, generates their profile draft, reviews it, and activates their tenant operating layer.
