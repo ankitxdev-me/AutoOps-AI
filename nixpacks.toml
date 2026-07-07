@@ -1,0 +1,5 @@
+[install]
+cmds = [
+  "npm install -g pnpm@11.10.0",
+  "pnpm i --frozen-lockfile"
+]
